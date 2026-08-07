@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { ensureRuntimeReady } from '@/lib/runtime-ready';
-import { getDb } from '@/lib/db';
+import { getDb, getDataDir } from '@/lib/db';
+import { shouldEnsureDemoData } from '@/lib/demo-config';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -18,9 +19,14 @@ export async function GET() {
       status: 'ok',
       service: 'CFS 2026 Notas',
       users,
-      seedDemo: process.env.SEED_DEMO_DATA === 'true',
+      seedDemo: shouldEnsureDemoData(),
       adminReady: Boolean(admin && admin.ativo),
-      databaseDir: process.env.DATABASE_DIR || 'default',
+      databaseDir: getDataDir(),
+      render: Boolean(process.env.RENDER),
+      env: {
+        SEED_DEMO_DATA: process.env.SEED_DEMO_DATA ?? '(não definido)',
+        DATABASE_DIR: process.env.DATABASE_DIR ?? '(não definido — usando padrão automático)',
+      },
     });
   } catch (error) {
     console.error('[health]', error);

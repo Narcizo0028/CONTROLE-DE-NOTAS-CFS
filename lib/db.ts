@@ -7,6 +7,13 @@ function isEphemeralServerlessHost() {
   return Boolean(process.env.VERCEL || process.env.NETLIFY || process.env.NETLIFY_DEV);
 }
 
+function resolveDataDir(): string {
+  if (process.env.DATABASE_DIR) return process.env.DATABASE_DIR;
+  if (process.env.RENDER) return '/var/data';
+  if (isEphemeralServerlessHost()) return '/tmp/cfs2026-data';
+  return path.join(process.cwd(), 'data');
+}
+
 function getDbPaths() {
   if (process.env.DATABASE_PATH) {
     return {
@@ -15,11 +22,7 @@ function getDbPaths() {
     };
   }
 
-  const dir = process.env.DATABASE_DIR
-    || (isEphemeralServerlessHost()
-      ? '/tmp/cfs2026-data'
-      : path.join(process.cwd(), 'data'));
-
+  const dir = resolveDataDir();
   return { dir, file: path.join(dir, 'cfs2026.db') };
 }
 

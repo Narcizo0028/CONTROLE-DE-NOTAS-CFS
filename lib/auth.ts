@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { getDb } from './db';
 import { logAudit, logLoginAttempt } from './audit';
 import { createSessionToken, verifySession, COOKIE_NAME, SESSION_DURATION } from './session';
+import { shouldEnsureDemoData } from './demo-config';
 import type { SessionUser, User, UserRole } from './types';
 
 export { verifySession } from './session';
@@ -60,6 +61,11 @@ export function clearSessionCookie() {
 }
 
 export async function login(loginName: string, password: string, ip?: string): Promise<{ success: boolean; user?: SessionUser; error?: string }> {
+  if (shouldEnsureDemoData()) {
+    const { ensureDemoAccess } = await import('./ensure-demo');
+    await ensureDemoAccess();
+  }
+
   const db = getDb();
   const normalizedLogin = loginName.trim().toLowerCase();
   const normalizedPassword = password;

@@ -13,6 +13,7 @@ const requiredFiles = [
   'lib/render-bootstrap.ts',
   'lib/runtime-ready.ts',
   'lib/ensure-demo.ts',
+  'lib/demo-config.ts',
   'lib/db.ts',
   'app/layout.tsx',
   'public/images/escudo-efas.png',

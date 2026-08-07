@@ -5,6 +5,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcryptjs';
 import { getDb } from './db';
+import { shouldEnsureDemoData } from './demo-config';
 
 const DEMO_ACCOUNTS = [
   { login: 'admin.geral', password: 'admin123', role: 'CONTROLADOR_GERAL' as const, nome: 'Controlador Geral CFS 2026' },
@@ -19,7 +20,14 @@ const DEMO_ACCOUNTS = [
 ];
 
 export async function ensureDemoAccess() {
-  if (process.env.SEED_DEMO_DATA !== 'true') return;
+  if (!shouldEnsureDemoData()) {
+    const db = getDb();
+    const userCount = (db.prepare('SELECT COUNT(*) as c FROM users').get() as { c: number }).c;
+    if (userCount === 0) {
+      console.warn('[demo] AVISO: banco sem usuários e seed demo desabilitado (SEED_DEMO_DATA=false).');
+    }
+    return;
+  }
 
   const db = getDb();
   const userCount = (db.prepare('SELECT COUNT(*) as c FROM users').get() as { c: number }).c;

@@ -12,7 +12,8 @@ export async function ensureRuntimeReady() {
     const { getDb } = await import('./db');
     getDb();
 
-    if (process.env.SEED_DEMO_DATA === 'true') {
+    const { shouldEnsureDemoData } = await import('./demo-config');
+    if (shouldEnsureDemoData()) {
       const { ensureDemoAccess } = await import('./ensure-demo');
       await ensureDemoAccess();
     }
