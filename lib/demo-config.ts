@@ -16,4 +16,4 @@ export function shouldEnsureDemoData(): boolean {
   return process.env.NODE_ENV !== 'production';
 }
 
-export const APP_VERSION = '1.0.8';
+export const APP_VERSION = '1.0.9';

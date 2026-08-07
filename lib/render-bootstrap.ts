@@ -3,7 +3,7 @@
  */
 import fs from 'fs';
 import path from 'path';
-import { getDb, closeDb } from './db';
+import { getDb, closeDb, getDataDir } from './db';
 import { ensureDemoAccess } from './ensure-demo';
 import { shouldEnsureDemoData } from './demo-config';
 
@@ -29,6 +29,7 @@ async function bootstrap() {
   console.log(`[bootstrap] RENDER=${process.env.RENDER ?? 'false'} DATABASE_DIR=${process.env.DATABASE_DIR ?? '(auto)'}`);
 
   getDb();
+  console.log(`[bootstrap] Banco em: ${getDataDir()}`);
 
   if (shouldEnsureDemoData()) {
     console.log('[bootstrap] Garantindo acesso demo...');
@@ -41,7 +42,9 @@ async function bootstrap() {
   console.log('[bootstrap] Concluído.');
 }
 
+// Sai com 0 mesmo em falha: ensureRuntimeReady() refaz a inicialização na
+// primeira requisição, então o servidor deve subir de qualquer forma.
 bootstrap().catch((err) => {
-  console.error('[bootstrap] Falha:', err);
-  process.exit(1);
+  console.error('[bootstrap] Falha (o servidor continuará subindo):', err);
+  process.exit(0);
 });

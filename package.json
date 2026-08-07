@@ -1,6 +1,6 @@
 {
   "name": "cfs-2026-notas",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "private": true,
   "engines": {
     "node": "22.12.0"
@@ -13,6 +13,7 @@
     "start:render": "node --experimental-sqlite --import tsx lib/render-bootstrap.ts && node --experimental-sqlite node_modules/next/dist/bin/next start",
     "lint": "next lint",
     "verify": "node verificar-repositorio.mjs",
+    "test:login": "node scripts/teste-login.mjs",
     "db:seed": "node --experimental-sqlite --import tsx scripts/seed.ts",
     "db:reset": "node --experimental-sqlite --import tsx scripts/reset-db.ts",
     "db:bootstrap": "node --experimental-sqlite --import tsx lib/render-bootstrap.ts"

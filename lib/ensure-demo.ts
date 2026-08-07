@@ -26,8 +26,17 @@ export async function ensureDemoAccess() {
   // Banco vazio: sempre cria usuários (corrige Render sem env vars)
   if (userCount === 0) {
     console.log('[demo] Banco vazio — criando usuários demo...');
-    const { runDemoSeed } = await import('./seed-demo');
-    await runDemoSeed();
+    try {
+      const { runDemoSeed } = await import('./seed-demo');
+      await runDemoSeed();
+    } catch (error) {
+      console.error('[demo] Seed completo falhou, criando apenas as contas de acesso:', error);
+    }
+
+    // Rede de segurança: sem admin.geral ninguém entra no sistema.
+    const admin = db.prepare("SELECT id FROM users WHERE login = 'admin.geral'").get();
+    if (!admin) await syncDemoAccounts(db);
+
     clearLoginAttempts(db);
     console.log('[demo] OK: admin.geral/admin123 | ctrl.pelotao1/pelotao1 | disc.2026001/discente123');
     return;
@@ -36,7 +45,11 @@ export async function ensureDemoAccess() {
   if (!shouldEnsureDemoData()) return;
 
   console.log(`[demo] Sincronizando credenciais demo (${userCount} usuários)...`);
+  await syncDemoAccounts(db);
+  clearLoginAttempts(db);
+}
 
+async function syncDemoAccounts(db: ReturnType<typeof getDb>) {
   for (let i = 1; i <= 8; i++) {
     const existing = db.prepare('SELECT id FROM pelotoes WHERE numero = ?').get(i) as { id: string } | undefined;
     if (!existing) {
@@ -90,8 +103,6 @@ export async function ensureDemoAccess() {
       `).run(discenteId, account.nome, '2026001', pelotao.id, '2026-01-10', userId);
     }
   }
-
-  clearLoginAttempts(db);
 }
 
 function clearLoginAttempts(db: ReturnType<typeof getDb>) {

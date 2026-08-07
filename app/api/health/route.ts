@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { ensureRuntimeReady } from '@/lib/runtime-ready';
-import { getDb, getDataDir } from '@/lib/db';
+import { getDb, getDataDir, isPersistentDataDir } from '@/lib/db';
 import { shouldEnsureDemoData, isRenderHost, APP_VERSION } from '@/lib/demo-config';
 
 export const runtime = 'nodejs';
@@ -23,6 +23,7 @@ export async function GET() {
       seedDemo: shouldEnsureDemoData(),
       adminReady: Boolean(admin && admin.ativo),
       databaseDir: getDataDir(),
+      persistent: isPersistentDataDir(),
       render: isRenderHost(),
       env: {
         SEED_DEMO_DATA: process.env.SEED_DEMO_DATA ?? '(não definido)',
@@ -33,7 +34,7 @@ export async function GET() {
   } catch (error) {
     console.error('[health]', error);
     return NextResponse.json(
-      { status: 'error', service: 'CFS 2026 Notas', error: String(error) },
+      { status: 'error', service: 'CFS 2026 Notas', version: APP_VERSION, error: String(error) },
       { status: 500 }
     );
   }

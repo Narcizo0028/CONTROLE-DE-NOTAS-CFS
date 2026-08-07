@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('[login]', error);
     return NextResponse.json(
-      { error: 'Erro interno do servidor', detail: process.env.NODE_ENV === 'production' ? undefined : String(error) },
+      { error: 'Erro interno do servidor', detail: String(error) },
       { status: 500 }
     );
   }

@@ -60,8 +60,14 @@ export function clearSessionCookie() {
 }
 
 export async function login(loginName: string, password: string, ip?: string): Promise<{ success: boolean; user?: SessionUser; error?: string }> {
-  const { ensureDemoAccess } = await import('./ensure-demo');
-  await ensureDemoAccess();
+  // Idempotente e cacheado: evita re-hashear as contas demo a cada tentativa
+  // (o que também zerava o controle de tentativas a cada login).
+  try {
+    const { ensureRuntimeReady } = await import('./runtime-ready');
+    await ensureRuntimeReady();
+  } catch (error) {
+    console.error('[login] Falha na inicialização do banco:', error);
+  }
 
   const db = getDb();
   const normalizedLogin = loginName.trim().toLowerCase();

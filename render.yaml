@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: cfs-2026-notas
+    name: controle-de-notas-cfs
     runtime: node
     plan: starter
     region: oregon

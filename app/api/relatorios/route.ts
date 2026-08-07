@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   if (auth instanceof Response) return auth;
 
   const { searchParams } = new URL(request.url);
-  const tipo = searchParams.get('tipo') || 'geral';
+  const tipo = searchParams.get('tipo') ?? '';
   const pelotaoId = searchParams.get('pelotao_id');
   const disciplinaId = searchParams.get('disciplina_id');
   const discenteId = searchParams.get('discente_id');
@@ -158,6 +158,10 @@ export async function GET(request: NextRequest) {
     }
 
     default:
-      return apiError('Tipo de relatório inválido');
+      return apiError(
+        `Tipo de relatório inválido${tipo ? `: "${tipo}"` : ' (parâmetro "tipo" não informado)'}. `
+        + 'Válidos: notas_por_pelotao, notas_por_discente, notas_por_disciplina, pontos_por_pelotao, '
+        + 'divergencias, atualizacao_pelotoes, todos_discentes, pelotao_resumo, auditoria_notas.'
+      );
   }
 }

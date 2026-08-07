@@ -1,6 +1,7 @@
 import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 import { ensureDisciplinasOficiais } from './seed-disciplinas';
 
 function isEphemeralServerlessHost() {
@@ -15,11 +16,51 @@ function isRenderHost() {
   );
 }
 
+function isWritableDir(dir: string): boolean {
+  try {
+    fs.mkdirSync(dir, { recursive: true });
+    const probe = path.join(dir, `.write-test-${process.pid}`);
+    fs.writeFileSync(probe, 'ok');
+    fs.unlinkSync(probe);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+let cachedDataDir: string | null = null;
+
+/**
+ * O disco persistente do Render só existe quando o serviço foi criado pelo
+ * render.yaml. Em serviços criados manualmente /var/data não é gravável, então
+ * cada candidato é testado antes de ser adotado.
+ */
 function resolveDataDir(): string {
-  if (process.env.DATABASE_DIR) return process.env.DATABASE_DIR;
-  if (isRenderHost()) return '/var/data';
-  if (isEphemeralServerlessHost()) return '/tmp/cfs2026-data';
-  return path.join(process.cwd(), 'data');
+  if (cachedDataDir) return cachedDataDir;
+
+  const candidates: string[] = [];
+  if (process.env.DATABASE_DIR) candidates.push(process.env.DATABASE_DIR);
+  if (isRenderHost()) candidates.push('/var/data');
+  if (isEphemeralServerlessHost()) candidates.push('/tmp/cfs2026-data');
+  candidates.push(path.join(process.cwd(), 'data'));
+  candidates.push(path.join(os.tmpdir(), 'cfs2026-data'));
+
+  for (const dir of candidates) {
+    if (isWritableDir(dir)) {
+      if (dir !== candidates[0]) {
+        console.warn(`[db] Diretório "${candidates[0]}" indisponível. Usando "${dir}".`);
+      }
+      cachedDataDir = dir;
+      return dir;
+    }
+  }
+
+  throw new Error(`[db] Nenhum diretório gravável encontrado: ${candidates.join(', ')}`);
+}
+
+export function isPersistentDataDir(): boolean {
+  const dir = getDbPaths().dir;
+  return dir === process.env.DATABASE_DIR || dir === '/var/data';
 }
 
 function getDbPaths() {
