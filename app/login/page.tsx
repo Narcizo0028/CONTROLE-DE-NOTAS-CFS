@@ -67,6 +67,13 @@ export default function LoginPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="bg-pmmg-khaki-50 rounded-2xl shadow-pmmg border-2 border-pmmg-gold-400/40 p-8 space-y-5">
+          <div className="rounded-lg border border-pmmg-khaki-300 bg-white/80 p-3 text-xs text-pmmg-gray-700 space-y-1">
+            <p className="font-semibold text-pmmg-black uppercase tracking-wide">Acessos de demonstração</p>
+            <p><span className="font-semibold">Geral:</span> admin.geral / admin123</p>
+            <p><span className="font-semibold">Pelotão:</span> ctrl.pelotao1 / pelotao1</p>
+            <p><span className="font-semibold">Discente:</span> disc.2026001 / discente123</p>
+          </div>
+
           <div>
             <label className="label">Usuário</label>
             <input
@@ -74,7 +81,8 @@ export default function LoginPage() {
               value={login}
               onChange={(e) => setLogin(e.target.value)}
               className="input"
-              placeholder="Seu login"
+              placeholder="admin.geral"
+              autoComplete="username"
               required
               autoFocus
             />

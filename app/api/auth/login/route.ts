@@ -4,17 +4,12 @@ import { ensureRuntimeReady } from '@/lib/runtime-ready';
 import { COOKIE_NAME, SESSION_DURATION } from '@/lib/session';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
-function buildSessionCookie(token: string) {
-  return {
-    name: COOKIE_NAME,
-    value: token,
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax' as const,
-    maxAge: SESSION_DURATION,
-    path: '/',
-  };
+function isHttps(request: NextRequest) {
+  const proto = request.headers.get('x-forwarded-proto');
+  if (proto) return proto.split(',')[0].trim() === 'https';
+  return process.env.NODE_ENV === 'production' || Boolean(process.env.RENDER);
 }
 
 export async function POST(request: NextRequest) {
@@ -22,7 +17,7 @@ export async function POST(request: NextRequest) {
     await ensureRuntimeReady();
 
     const body = await request.json();
-    const loginName = String(body.login ?? '').trim();
+    const loginName = String(body.login ?? '').trim().toLowerCase();
     const password = String(body.password ?? '');
 
     if (!loginName || !password) {
@@ -46,10 +41,22 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    response.cookies.set(buildSessionCookie(token));
+    response.cookies.set({
+      name: COOKIE_NAME,
+      value: token,
+      httpOnly: true,
+      secure: isHttps(request),
+      sameSite: 'lax',
+      maxAge: SESSION_DURATION,
+      path: '/',
+    });
+
     return response;
   } catch (error) {
     console.error('[login]', error);
-    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Erro interno do servidor', detail: process.env.NODE_ENV === 'production' ? undefined : String(error) },
+      { status: 500 }
+    );
   }
 }

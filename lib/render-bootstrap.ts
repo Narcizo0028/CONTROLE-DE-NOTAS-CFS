@@ -5,7 +5,7 @@
 import fs from 'fs';
 import path from 'path';
 import { getDb, closeDb } from './db';
-import { runDemoSeed } from './seed-demo';
+import { ensureDemoAccess } from './ensure-demo';
 
 function loadEnvFile(file: string) {
   const full = path.join(process.cwd(), file);
@@ -27,17 +27,15 @@ loadEnvFile('.env.local');
 async function bootstrap() {
   console.log('[bootstrap] Inicializando banco de dados...');
   getDb();
-  closeDb();
 
   if (process.env.SEED_DEMO_DATA === 'true') {
-    console.log('[bootstrap] SEED_DEMO_DATA=true — verificando seed de demonstração...');
-    await runDemoSeed();
+    console.log('[bootstrap] SEED_DEMO_DATA=true — garantindo acesso demo...');
+    await ensureDemoAccess();
   } else {
     console.log('[bootstrap] Apenas schema e disciplinas oficiais.');
-    getDb();
-    closeDb();
   }
 
+  closeDb();
   console.log('[bootstrap] Concluído.');
 }
 

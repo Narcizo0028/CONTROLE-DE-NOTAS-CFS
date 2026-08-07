@@ -10,7 +10,15 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (pathname.startsWith('/_next') || pathname.startsWith('/favicon') || pathname.endsWith('.ico')) {
+  if (
+    pathname.startsWith('/_next')
+    || pathname.startsWith('/favicon')
+    || pathname.startsWith('/images')
+    || pathname.endsWith('.ico')
+    || pathname.endsWith('.png')
+    || pathname.endsWith('.jpg')
+    || pathname.endsWith('.svg')
+  ) {
     return NextResponse.next();
   }
 

@@ -61,7 +61,7 @@ export function clearSessionCookie() {
 
 export async function login(loginName: string, password: string, ip?: string): Promise<{ success: boolean; user?: SessionUser; error?: string }> {
   const db = getDb();
-  const normalizedLogin = loginName.trim();
+  const normalizedLogin = loginName.trim().toLowerCase();
   const normalizedPassword = password;
 
   const recentFailures = db.prepare(`
