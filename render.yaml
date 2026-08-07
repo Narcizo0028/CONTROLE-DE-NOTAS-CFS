@@ -16,8 +16,10 @@ services:
         value: production
       - key: JWT_SECRET
         generateValue: true
+      # As contas de acesso são criadas automaticamente quando o banco está
+      # vazio. "true" faria o sistema resetar as senhas a cada reinício.
       - key: SEED_DEMO_DATA
-        value: "true"
+        value: "false"
       - key: DATABASE_DIR
         value: /var/data
     disk:
