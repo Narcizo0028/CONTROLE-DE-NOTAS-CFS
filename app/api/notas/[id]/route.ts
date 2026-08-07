@@ -6,6 +6,9 @@ import { canAccessDiscente } from '@/lib/permissions';
 import { validarLancamento, prepararNotaParaSalvar, formatNotaResumo } from '@/lib/avaliacao';
 import type { Disciplina, LancamentoNota } from '@/lib/types';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   const auth = await requireAuth();
   if (auth instanceof Response) return auth;

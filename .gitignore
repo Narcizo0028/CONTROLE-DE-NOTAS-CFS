@@ -14,10 +14,11 @@
 /build
 
 # Database
-/data/*.db
-/data/*.db-wal
-/data/*.db-shm
-/data/backups/
+/data/
+/data-fresh/
+*.db
+*.db-wal
+*.db-shm
 
 # Misc
 .DS_Store

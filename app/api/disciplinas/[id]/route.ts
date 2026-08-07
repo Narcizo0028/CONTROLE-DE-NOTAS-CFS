@@ -2,6 +2,9 @@ import { NextRequest } from 'next/server';
 import { getDb } from '@/lib/db';
 import { requireRole, apiError, apiSuccess } from '@/lib/api-helpers';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   const auth = await requireRole(['CONTROLADOR_GERAL']);
   if (auth instanceof Response) return auth;

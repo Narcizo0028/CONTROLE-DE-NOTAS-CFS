@@ -4,6 +4,9 @@ import { requireAuth, apiError, apiSuccess } from '@/lib/api-helpers';
 import { logAudit } from '@/lib/audit';
 import { canAccessDiscente } from '@/lib/permissions';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function GET(_request: NextRequest, { params }: { params: { id: string } }) {
   const auth = await requireAuth();
   if (auth instanceof Response) return auth;

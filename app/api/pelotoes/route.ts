@@ -5,6 +5,9 @@ import { requireAuth, requireRole, apiError, apiSuccess } from '@/lib/api-helper
 import { logAudit } from '@/lib/audit';
 import { isControladorGeral } from '@/lib/permissions';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const auth = await requireAuth();
   if (auth instanceof Response) return auth;

@@ -5,6 +5,9 @@ import { canAccessPelotao } from '@/lib/permissions';
 import { salvarNota } from '@/lib/notas-service';
 import type { Disciplina, LancamentoNota, TipoLancamento } from '@/lib/types';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   const auth = await requireAuth();
   if (auth instanceof Response) return auth;

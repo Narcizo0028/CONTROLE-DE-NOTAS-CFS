@@ -4,6 +4,9 @@ import { getDb } from '@/lib/db';
 import { requireRole, apiError, apiSuccess } from '@/lib/api-helpers';
 import { hashPassword } from '@/lib/auth';
 import { logAudit } from '@/lib/audit';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 import {
   buildDiscentesImportPreview,
   parseDiscentesImportPayload,

@@ -10,12 +10,12 @@
     "build": "node --experimental-sqlite node_modules/next/dist/bin/next build",
     "start": "npm run start:render",
     "start:local": "node --experimental-sqlite node_modules/next/dist/bin/next start",
-    "start:render": "node --experimental-sqlite ./node_modules/tsx/dist/cli.mjs lib/render-bootstrap.ts && node --experimental-sqlite node_modules/next/dist/bin/next start",
+    "start:render": "node --experimental-sqlite --import tsx lib/render-bootstrap.ts && node --experimental-sqlite node_modules/next/dist/bin/next start",
     "lint": "next lint",
     "verify": "node verificar-repositorio.mjs",
-    "db:seed": "node --experimental-sqlite ./node_modules/tsx/dist/cli.mjs scripts/seed.ts",
-    "db:reset": "node --experimental-sqlite ./node_modules/tsx/dist/cli.mjs scripts/reset-db.ts",
-    "db:bootstrap": "node --experimental-sqlite ./node_modules/tsx/dist/cli.mjs lib/render-bootstrap.ts"
+    "db:seed": "node --experimental-sqlite --import tsx scripts/seed.ts",
+    "db:reset": "node --experimental-sqlite --import tsx scripts/reset-db.ts",
+    "db:bootstrap": "node --experimental-sqlite --import tsx lib/render-bootstrap.ts"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

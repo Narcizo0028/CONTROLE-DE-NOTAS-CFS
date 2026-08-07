@@ -112,6 +112,7 @@ export function getDb(): DbInstance {
     const database = new DatabaseSync(file);
     database.exec('PRAGMA journal_mode = WAL');
     database.exec('PRAGMA foreign_keys = ON');
+    database.exec('PRAGMA busy_timeout = 10000');
     db = wrapDatabase(database);
     initializeSchema(db);
     migrateSchema(db);

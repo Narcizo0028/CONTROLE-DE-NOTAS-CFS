@@ -6,6 +6,9 @@ import { getDb, getDataDir } from '@/lib/db';
 import { requireRole, apiSuccess, apiError } from '@/lib/api-helpers';
 import { logAudit } from '@/lib/audit';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 function getBackupDir() {
   return path.join(getDataDir(), 'backups');
 }

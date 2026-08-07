@@ -7,6 +7,9 @@ import { parseLancamentoFromImport, formatNotaResumo } from '@/lib/avaliacao';
 import { salvarNota } from '@/lib/notas-service';
 import type { Disciplina, ImportPreviewItem, TipoLancamento } from '@/lib/types';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 interface ImportItem {
   matricula: string;
   disciplina: string;

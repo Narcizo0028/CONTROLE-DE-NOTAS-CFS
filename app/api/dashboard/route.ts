@@ -4,6 +4,9 @@ import { getPelotaoUpdateStatus, getDivergencias, calculateRanking } from '@/lib
 import { isControladorGeral, isControladorPelotao, isDiscente } from '@/lib/permissions';
 import { getDiscenteRanking } from '@/lib/ranking';
 import { applyRankingPrivacy } from '@/lib/utils';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 export async function GET() {
   const auth = await requireAuth();
   if (auth instanceof Response) return auth;

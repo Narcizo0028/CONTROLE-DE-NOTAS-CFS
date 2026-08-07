@@ -4,6 +4,9 @@ import { requireAuth, apiError, apiSuccess } from '@/lib/api-helpers';
 import { isControladorGeral, isControladorPelotao, isDiscente, canAccessPelotao } from '@/lib/permissions';
 import { applyRankingPrivacy } from '@/lib/utils';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   const auth = await requireAuth();
   if (auth instanceof Response) return auth;

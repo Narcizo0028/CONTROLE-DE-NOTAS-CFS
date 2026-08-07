@@ -2,6 +2,9 @@ import { requireAuth, apiSuccess } from '@/lib/api-helpers';
 import { getDb } from '@/lib/db';
 import { getCamposAvaliacao } from '@/lib/avaliacao';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const auth = await requireAuth();
   if (auth instanceof Response) return auth;

@@ -3,6 +3,9 @@ import { getSession } from '@/lib/auth';
 import { COOKIE_NAME } from '@/lib/session';
 import { logAudit } from '@/lib/audit';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function POST() {
   const user = await getSession();
   if (user) {

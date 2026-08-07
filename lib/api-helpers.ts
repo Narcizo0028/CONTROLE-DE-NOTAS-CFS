@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
 import { getSession } from './auth';
 import { canAccessRoute } from './permissions';
+import { ensureRuntimeReady } from './runtime-ready';
 import type { SessionUser } from './types';
 
 export async function requireAuth(): Promise<{ user: SessionUser } | NextResponse> {
+  await ensureRuntimeReady();
   const user = await getSession();
   if (!user) {
     return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });

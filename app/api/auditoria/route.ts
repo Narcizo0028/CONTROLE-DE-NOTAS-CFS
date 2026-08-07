@@ -3,6 +3,9 @@ import { getAuditLogs, getAuditCount } from '@/lib/audit';
 import { requireRole, apiError, apiSuccess } from '@/lib/api-helpers';
 import { isControladorGeral, canAccessPelotao } from '@/lib/permissions';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   const auth = await requireRole(['CONTROLADOR_GERAL', 'CONTROLADOR_PELOTÃO']);
   if (auth instanceof Response) return auth;

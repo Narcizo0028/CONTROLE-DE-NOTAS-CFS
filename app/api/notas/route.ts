@@ -5,6 +5,9 @@ import { isControladorGeral, isControladorPelotao, isDiscente, canAccessDiscente
 import { salvarNota } from '@/lib/notas-service';
 import type { Disciplina, LancamentoNota, TipoLancamento } from '@/lib/types';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 function getTipoLancamento(role: string): TipoLancamento {
   if (role === 'CONTROLADOR_GERAL') return 'CONTROLADOR_GERAL';
   if (role === 'CONTROLADOR_PELOTÃO') return 'CONTROLADOR_PELOTÃO';

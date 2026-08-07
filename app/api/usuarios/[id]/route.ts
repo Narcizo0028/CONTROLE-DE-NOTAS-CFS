@@ -4,6 +4,9 @@ import { requireRole, apiError, apiSuccess } from '@/lib/api-helpers';
 import { logAudit } from '@/lib/audit';
 import { resetPassword, hashPassword } from '@/lib/auth';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   const auth = await requireRole(['CONTROLADOR_GERAL']);
   if (auth instanceof Response) return auth;
