@@ -1,13 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { login, createSession, setSessionCookie } from '@/lib/auth';
+import { login, createSession } from '@/lib/auth';
 import { ensureRuntimeReady } from '@/lib/runtime-ready';
+import { COOKIE_NAME, SESSION_DURATION } from '@/lib/session';
 
 export const runtime = 'nodejs';
+
+function buildSessionCookie(token: string) {
+  return {
+    name: COOKIE_NAME,
+    value: token,
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax' as const,
+    maxAge: SESSION_DURATION,
+    path: '/',
+  };
+}
 
 export async function POST(request: NextRequest) {
   try {
     await ensureRuntimeReady();
-    const { login: loginName, password } = await request.json();
+
+    const body = await request.json();
+    const loginName = String(body.login ?? '').trim();
+    const password = String(body.password ?? '');
 
     if (!loginName || !password) {
       return NextResponse.json({ error: 'Login e senha são obrigatórios' }, { status: 400 });
@@ -21,9 +37,7 @@ export async function POST(request: NextRequest) {
     }
 
     const token = await createSession(result.user);
-    setSessionCookie(token);
-
-    return NextResponse.json({
+    const response = NextResponse.json({
       user: {
         id: result.user.id,
         login: result.user.login,
@@ -31,7 +45,11 @@ export async function POST(request: NextRequest) {
         role: result.user.role,
       },
     });
-  } catch {
+
+    response.cookies.set(buildSessionCookie(token));
+    return response;
+  } catch (error) {
+    console.error('[login]', error);
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
   }
 }

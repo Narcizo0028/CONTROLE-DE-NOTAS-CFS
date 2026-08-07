@@ -25,8 +25,16 @@ export function formatDate(dateStr: string | null | undefined): string {
   }
 }
 
+export function calcMedia(pontosObtidos: number, pontosDistribuidos: number): number {
+  return pontosDistribuidos > 0 ? (pontosObtidos / pontosDistribuidos) * 10 : 0;
+}
+
 export function formatPercent(value: number): string {
   return `${value.toFixed(2)}%`;
+}
+
+export function formatMedia(value: number): string {
+  return value.toFixed(2).replace('.', ',');
 }
 
 export function censorName(name: string, isSelf: boolean): string {

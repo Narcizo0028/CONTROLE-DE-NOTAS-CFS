@@ -2,14 +2,12 @@ import { NextRequest } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 import path from 'path';
-import { getDb } from '@/lib/db';
+import { getDb, getDataDir } from '@/lib/db';
 import { requireRole, apiSuccess, apiError } from '@/lib/api-helpers';
 import { logAudit } from '@/lib/audit';
 
-const BACKUP_DIR = path.join(process.cwd(), 'data', 'backups');
-
-function ensureBackupDir() {
-  if (!fs.existsSync(BACKUP_DIR)) fs.mkdirSync(BACKUP_DIR, { recursive: true });
+function getBackupDir() {
+  return path.join(getDataDir(), 'backups');
 }
 
 export async function GET() {
@@ -32,7 +30,8 @@ export async function POST(request: NextRequest) {
   if (auth instanceof Response) return auth;
 
   const { action, backup_id } = await request.json();
-  ensureBackupDir();
+  const BACKUP_DIR = getBackupDir();
+  if (!fs.existsSync(BACKUP_DIR)) fs.mkdirSync(BACKUP_DIR, { recursive: true });
 
   if (action === 'create') {
     const db = getDb();

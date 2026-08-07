@@ -8,7 +8,7 @@ import {
   GraduationCap, Users, BookOpen, FileText, AlertTriangle, Trophy,
   RefreshCw, BarChart3, Shield, Database, ChevronRight,
 } from 'lucide-react';
-import { formatDateTime, formatPercent } from '@/lib/utils';
+import { formatDateTime, formatPercent, formatMedia } from '@/lib/utils';
 
 interface DashboardData {
   stats: {
@@ -233,7 +233,7 @@ export default function DashboardGeralPage() {
                     </div>
                     <div className="text-right shrink-0">
                       <p className="text-sm sm:text-base font-bold text-pmmg-gold-700">
-                        {formatPercent(r.percentual)}
+                        {formatMedia(r.percentual)}
                       </p>
                     </div>
                   </li>

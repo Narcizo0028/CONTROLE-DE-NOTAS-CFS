@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import AppLayout from '@/components/AppLayout';
 import NotaForm from '@/components/NotaForm';
 import { useAuth } from '@/components/AuthProvider';
-import { formatPercent } from '@/lib/utils';
+import { formatMedia, calcMedia } from '@/lib/utils';
 import type { Disciplina, LancamentoNota } from '@/lib/types';
 
 interface NotaRow {
@@ -106,7 +106,7 @@ export default function MinhasNotasPage() {
             <div className="table-container">
               <table className="data-table">
                 <thead>
-                  <tr><th>Disciplina</th><th>Resultado</th><th>Total</th><th>%</th></tr>
+                  <tr><th>Disciplina</th><th>Resultado</th><th>Total</th><th>Média</th></tr>
                 </thead>
                 <tbody>
                   {notas.map((n) => (
@@ -116,7 +116,7 @@ export default function MinhasNotasPage() {
                       <td>{n.participa_media ? `${n.pontos_obtidos}/${n.pontos_distribuidos}` : '—'}</td>
                       <td>
                         {n.participa_media
-                          ? formatPercent(n.pontos_distribuidos > 0 ? (n.pontos_obtidos / n.pontos_distribuidos) * 100 : 0)
+                          ? formatMedia(calcMedia(n.pontos_obtidos, n.pontos_distribuidos))
                           : '—'}
                       </td>
                     </tr>
@@ -132,9 +132,11 @@ export default function MinhasNotasPage() {
             <p className="text-sm text-primary-800">
               Média geral (disciplinas numéricas):{' '}
               <strong>
-                {formatPercent(
-                  notasNumericas.reduce((s, n) => s + n.pontos_obtidos, 0) /
-                  Math.max(notasNumericas.reduce((s, n) => s + n.pontos_distribuidos, 0), 1) * 100
+                {formatMedia(
+                  calcMedia(
+                    notasNumericas.reduce((s, n) => s + n.pontos_obtidos, 0),
+                    Math.max(notasNumericas.reduce((s, n) => s + n.pontos_distribuidos, 0), 1)
+                  )
                 )}
               </strong>
             </p>

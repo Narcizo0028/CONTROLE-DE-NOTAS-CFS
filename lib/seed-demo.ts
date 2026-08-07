@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcryptjs';
-import { getDb, closeDb } from './db';
+import { getDb } from './db';
 import { prepararNotaParaSalvar } from './avaliacao';
 import type { Disciplina } from './types';
 
@@ -9,11 +9,9 @@ export async function runDemoSeed() {
 
   console.log('Inicializando banco de dados CFS 2026...');
 
-  const existingGeral = db.prepare("SELECT id FROM users WHERE role = 'CONTROLADOR_GERAL'").get();
-  if (existingGeral) {
-    console.log('Banco já possui dados de usuários. Pulando seed de usuários/discentes.');
-    console.log('Disciplinas oficiais verificadas na inicialização.');
-    closeDb();
+  const userCount = db.prepare('SELECT COUNT(*) as c FROM users').get() as { c: number };
+  if (userCount.c > 0) {
+    console.log(`Banco já possui ${userCount.c} usuário(s). Pulando seed de demonstração.`);
     return;
   }
 
@@ -133,6 +131,4 @@ export async function runDemoSeed() {
   console.log('Controlador Geral: admin.geral / admin123');
   console.log('Controlador Pelotão 1: ctrl.pelotao1 / pelotao1');
   console.log('Discente: disc.2026001 / discente123');
-
-  closeDb();
 }

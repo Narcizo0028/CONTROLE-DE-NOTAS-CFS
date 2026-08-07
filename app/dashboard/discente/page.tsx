@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import AppLayout from '@/components/AppLayout';
 import StatCard from '@/components/StatCard';
 import { Trophy, RefreshCw } from 'lucide-react';
-import { formatPercent, censorName } from '@/lib/utils';
+import { formatMedia, censorName, calcMedia } from '@/lib/utils';
 import { useAuth } from '@/components/AuthProvider';
 
 export default function DashboardDiscentePage() {
@@ -65,8 +65,8 @@ export default function DashboardDiscentePage() {
             color="green"
           />
           <StatCard
-            title="Aproveitamento"
-            value={data.rankingGeral ? formatPercent(data.rankingGeral.percentual) : '—'}
+            title="Média Geral"
+            value={data.rankingGeral ? formatMedia(data.rankingGeral.percentual) : '—'}
             color="purple"
           />
           <StatCard
@@ -83,14 +83,14 @@ export default function DashboardDiscentePage() {
           ) : (
             <div className="table-container">
               <table className="data-table">
-                <thead><tr><th>Disciplina</th><th>Obtidos</th><th>Distribuídos</th><th>%</th></tr></thead>
+                <thead><tr><th>Disciplina</th><th>Obtidos</th><th>Distribuídos</th><th>Média</th></tr></thead>
                 <tbody>
                   {data.notas.map((n, i) => (
                     <tr key={i}>
                       <td>{n.disciplina_nome}</td>
                       <td>{n.pontos_obtidos}</td>
                       <td>{n.pontos_distribuidos}</td>
-                      <td>{formatPercent(n.pontos_distribuidos > 0 ? (n.pontos_obtidos / n.pontos_distribuidos) * 100 : 0)}</td>
+                      <td>{formatMedia(calcMedia(n.pontos_obtidos, n.pontos_distribuidos))}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -121,7 +121,7 @@ export default function DashboardDiscentePage() {
                   <span className={`flex-1 text-sm ${r.discente_id === user?.discente_id ? 'font-bold' : 'censored'}`}>
                     {censorName(r.nome, r.discente_id === user?.discente_id)}
                   </span>
-                  <span className="text-sm text-primary-600">{formatPercent(r.percentual)}</span>
+                  <span className="text-sm text-primary-600">{formatMedia(r.percentual)}</span>
                 </div>
               ))}
             </div>
@@ -138,7 +138,7 @@ export default function DashboardDiscentePage() {
                   <span className={`flex-1 text-sm ${r.discente_id === user?.discente_id ? 'font-bold' : 'censored'}`}>
                     {censorName(r.nome, r.discente_id === user?.discente_id)}
                   </span>
-                  <span className="text-sm text-primary-600">{formatPercent(r.percentual)}</span>
+                  <span className="text-sm text-primary-600">{formatMedia(r.percentual)}</span>
                 </div>
               ))}
             </div>

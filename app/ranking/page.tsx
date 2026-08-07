@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import AppLayout from '@/components/AppLayout';
 import DataTable from '@/components/DataTable';
 import { RefreshCw } from 'lucide-react';
-import { formatPercent, censorName } from '@/lib/utils';
+import { formatMedia, censorName } from '@/lib/utils';
 import { useAuth } from '@/components/AuthProvider';
 import { exportTableToPDF } from '@/lib/pdf-export';
 
@@ -55,14 +55,14 @@ export default function RankingPage() {
   const handleExportPDF = () => {
     exportTableToPDF(
       'Ranking CFS 2026',
-      ['Pos.', 'Nome', 'Pelotão', 'Distribuídos', 'Obtidos', '%'],
+      ['Pos.', 'Nome', 'Pelotão', 'Distribuídos', 'Obtidos', 'Média'],
       ranking.map((r) => [
         String(r.posicao),
         isCensored ? censorName(r.nome, r.discente_id === user?.discente_id) : r.nome,
         r.pelotao_nome,
         String(r.pontos_distribuidos),
         String(r.pontos_obtidos),
-        formatPercent(r.percentual),
+        formatMedia(r.percentual),
       ])
     );
   };
@@ -126,13 +126,13 @@ export default function RankingPage() {
             {comparison.length > 0 && (
               <div className="table-container mt-4">
                 <table className="data-table">
-                  <thead><tr><th>Pelotão</th><th>Discentes</th><th>Média %</th></tr></thead>
+                  <thead><tr><th>Pelotão</th><th>Discentes</th><th>Média</th></tr></thead>
                   <tbody>
                     {comparison.map((c, i) => (
                       <tr key={i}>
                         <td>{c.pelotao_nome}</td>
                         <td>{c.total_discentes}</td>
-                        <td className="font-semibold">{formatPercent(c.media_percentual)}</td>
+                        <td className="font-semibold">{formatMedia(c.media_percentual)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -164,7 +164,7 @@ export default function RankingPage() {
               { key: 'pelotao_nome', label: 'Pelotão' },
               { key: 'pontos_distribuidos', label: 'Distribuídos' },
               { key: 'pontos_obtidos', label: 'Obtidos' },
-              { key: 'percentual', label: '%', render: (r) => <span className="font-semibold text-primary-600">{formatPercent(r.percentual)}</span> },
+              { key: 'percentual', label: 'Média', render: (r) => <span className="font-semibold text-primary-600">{formatMedia(r.percentual)}</span> },
             ]}
           />
         )}

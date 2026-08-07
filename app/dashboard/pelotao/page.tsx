@@ -5,7 +5,7 @@ import Link from 'next/link';
 import AppLayout from '@/components/AppLayout';
 import StatCard from '@/components/StatCard';
 import { GraduationCap, BookOpen, FileText, Settings, Trophy, RefreshCw } from 'lucide-react';
-import { formatDateTime, formatPercent } from '@/lib/utils';
+import { formatDateTime, formatPercent, formatMedia } from '@/lib/utils';
 
 export default function DashboardPelotaoPage() {
   const [data, setData] = useState<{
@@ -65,7 +65,7 @@ export default function DashboardPelotaoPage() {
                   {r.posicao}º
                 </span>
                 <span className="flex-1 text-sm font-medium">{r.nome}</span>
-                <span className="text-sm font-semibold text-primary-600">{formatPercent(r.percentual)}</span>
+                <span className="text-sm font-semibold text-primary-600">{formatMedia(r.percentual)}</span>
               </div>
             ))}
             {data.ranking.length === 0 && <p className="text-gray-500 text-sm">Nenhuma nota lançada ainda.</p>}

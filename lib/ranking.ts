@@ -1,5 +1,6 @@
 import { getDb } from './db';
 import type { RankingEntry } from './types';
+import { calcMedia } from './utils';
 
 interface DiscenteStats {
   discente_id: string;
@@ -11,6 +12,7 @@ interface DiscenteStats {
   pontos_distribuidos: number;
   pontos_obtidos: number;
   percentual: number;
+  media: number;
 }
 
 function getDiscenteStats(pelotaoIds?: string[]): DiscenteStats[] {
@@ -46,17 +48,19 @@ function getDiscenteStats(pelotaoIds?: string[]): DiscenteStats[] {
 
   const rows = db.prepare(query).all(...params) as unknown as DiscenteStats[];
 
-  return rows.map((row) => ({
-    ...row,
-    percentual: row.pontos_distribuidos > 0
-      ? (row.pontos_obtidos / row.pontos_distribuidos) * 100
-      : 0,
-  }));
+  return rows.map((row) => {
+    const media = calcMedia(row.pontos_obtidos, row.pontos_distribuidos);
+    return {
+      ...row,
+      media,
+      percentual: media,
+    };
+  });
 }
 
 function sortRanking(stats: DiscenteStats[]): DiscenteStats[] {
   return [...stats].sort((a, b) => {
-    if (b.percentual !== a.percentual) return b.percentual - a.percentual;
+    if (b.media !== a.media) return b.media - a.media;
     if (b.pontos_obtidos !== a.pontos_obtidos) return b.pontos_obtidos - a.pontos_obtidos;
     if (b.pontos_distribuidos !== a.pontos_distribuidos) return b.pontos_distribuidos - a.pontos_distribuidos;
     return new Date(a.data_ingresso).getTime() - new Date(b.data_ingresso).getTime();
@@ -76,7 +80,8 @@ export function calculateRanking(pelotaoIds?: string[]): RankingEntry[] {
     pelotao_numero: s.pelotao_numero,
     pontos_distribuidos: s.pontos_distribuidos,
     pontos_obtidos: s.pontos_obtidos,
-    percentual: s.percentual,
+    percentual: s.media,
+    media: s.media,
     data_ingresso: s.data_ingresso,
   }));
 }

@@ -37,7 +37,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(getDashboardPath(user.role), request.url));
   }
 
-  const response = NextResponse.next();  response.headers.set('x-user-id', user.id);
+  const response = NextResponse.next();
+  response.headers.set('x-user-id', user.id);
   response.headers.set('x-user-role', user.role);
   return response;
 }

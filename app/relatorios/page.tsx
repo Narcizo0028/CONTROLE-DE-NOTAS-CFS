@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import AppLayout from '@/components/AppLayout';
 import DataTable from '@/components/DataTable';
 import { useAuth } from '@/components/AuthProvider';
-import { formatDateTime, formatPercent, getTipoLancamentoLabel } from '@/lib/utils';
+import { formatDateTime, formatPercent, formatMedia, getTipoLancamentoLabel } from '@/lib/utils';
 import { exportTableToPDF } from '@/lib/pdf-export';
 
 const reportTypes = [
@@ -62,7 +62,7 @@ export default function RelatoriosPage() {
                 { key: 'nome', label: 'Nome' },
                 { key: 'pontos_obtidos', label: 'Obtidos' },
                 { key: 'pontos_distribuidos', label: 'Distribuídos' },
-                { key: 'percentual', label: '%', render: (r) => formatPercent(r.percentual as number) },
+                { key: 'percentual', label: 'Média', render: (r) => formatMedia(r.percentual as number) },
               ]}
             />
           </div>
@@ -96,7 +96,10 @@ export default function RelatoriosPage() {
           columns={keys.slice(0, 8).map((k) => ({
             key: k,
             label: k.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
-            render: k.includes('percentual') ? (r: Record<string, unknown>) => formatPercent(r[k] as number)
+            render: k === 'percentual_atualizacao'
+              ? (r: Record<string, unknown>) => formatPercent(r[k] as number)
+              : k.includes('percentual') || k === 'media'
+              ? (r: Record<string, unknown>) => formatMedia(r[k] as number)
               : k.includes('created_at') || k.includes('ultima_atualizacao') ? (r: Record<string, unknown>) => formatDateTime(r[k] as string)
               : k === 'tipo_lancamento' ? (r: Record<string, unknown>) => getTipoLancamentoLabel(r[k] as string)
               : undefined,

@@ -61,27 +61,29 @@ export function clearSessionCookie() {
 
 export async function login(loginName: string, password: string, ip?: string): Promise<{ success: boolean; user?: SessionUser; error?: string }> {
   const db = getDb();
+  const normalizedLogin = loginName.trim();
+  const normalizedPassword = password;
 
   const recentFailures = db.prepare(`
     SELECT COUNT(*) as c FROM login_attempts
     WHERE login = ? AND success = 0
       AND datetime(created_at) > datetime('now', '-15 minutes')
-  `).get(loginName) as { c: number };
+  `).get(normalizedLogin) as { c: number };
 
   if (recentFailures.c >= 5) {
     return { success: false, error: 'Muitas tentativas. Aguarde 15 minutos e tente novamente.' };
   }
 
-  const user = db.prepare('SELECT * FROM users WHERE login = ? AND ativo = 1').get(loginName) as User | undefined;
+  const user = db.prepare('SELECT * FROM users WHERE login = ? AND ativo = 1').get(normalizedLogin) as User | undefined;
   if (!user) {
-    logLoginAttempt(loginName, false, ip);
-    logAudit({ acao: 'LOGIN_FALHA', motivo: `Login falhou: ${loginName}`, ip_address: ip });
+    logLoginAttempt(normalizedLogin, false, ip);
+    logAudit({ acao: 'LOGIN_FALHA', motivo: `Login falhou: ${normalizedLogin}`, ip_address: ip });
     return { success: false, error: 'Login ou senha inválidos' };
   }
 
-  const valid = await verifyPassword(password, user.password_hash ?? '');
+  const valid = await verifyPassword(normalizedPassword, user.password_hash ?? '');
   if (!valid) {
-    logLoginAttempt(loginName, false, ip);
+    logLoginAttempt(normalizedLogin, false, ip);
     logAudit({
       user: { id: user.id, login: user.login, nome: user.nome, role: user.role, pelotao_id: user.pelotao_id, discente_id: user.discente_id },
       acao: 'LOGIN_FALHA',
@@ -91,7 +93,7 @@ export async function login(loginName: string, password: string, ip?: string): P
     return { success: false, error: 'Login ou senha inválidos' };
   }
 
-  logLoginAttempt(loginName, true, ip);
+  logLoginAttempt(normalizedLogin, true, ip);
 
   const sessionUser: SessionUser = {
     id: user.id,

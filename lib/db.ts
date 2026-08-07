@@ -23,6 +23,10 @@ function getDbPaths() {
   return { dir, file: path.join(dir, 'cfs2026.db') };
 }
 
+export function getDataDir(): string {
+  return getDbPaths().dir;
+}
+
 export type DbInstance = DatabaseSync & {
   transaction: (fn: () => void) => () => void;
 };

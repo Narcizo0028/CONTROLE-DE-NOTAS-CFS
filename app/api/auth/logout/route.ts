@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getSession, clearSessionCookie } from '@/lib/auth';
+import { getSession } from '@/lib/auth';
+import { COOKIE_NAME } from '@/lib/session';
 import { logAudit } from '@/lib/audit';
 
 export async function POST() {
@@ -7,8 +8,9 @@ export async function POST() {
   if (user) {
     logAudit({ user, acao: 'LOGOUT' });
   }
-  clearSessionCookie();
-  return NextResponse.json({ success: true });
+  const response = NextResponse.json({ success: true });
+  response.cookies.delete(COOKIE_NAME);
+  return response;
 }
 
 export async function GET() {
