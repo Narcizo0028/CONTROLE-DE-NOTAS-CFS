@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { ensureRuntimeReady } from '@/lib/runtime-ready';
 import { getDb, getDataDir } from '@/lib/db';
-import { shouldEnsureDemoData } from '@/lib/demo-config';
+import { shouldEnsureDemoData, isRenderHost, APP_VERSION } from '@/lib/demo-config';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -18,14 +18,16 @@ export async function GET() {
     return NextResponse.json({
       status: 'ok',
       service: 'CFS 2026 Notas',
+      version: APP_VERSION,
       users,
       seedDemo: shouldEnsureDemoData(),
       adminReady: Boolean(admin && admin.ativo),
       databaseDir: getDataDir(),
-      render: Boolean(process.env.RENDER),
+      render: isRenderHost(),
       env: {
         SEED_DEMO_DATA: process.env.SEED_DEMO_DATA ?? '(não definido)',
-        DATABASE_DIR: process.env.DATABASE_DIR ?? '(não definido — usando padrão automático)',
+        DATABASE_DIR: process.env.DATABASE_DIR ?? '(auto)',
+        RENDER: process.env.RENDER ?? '(não definido)',
       },
     });
   } catch (error) {

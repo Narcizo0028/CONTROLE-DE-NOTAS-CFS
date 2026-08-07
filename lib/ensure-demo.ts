@@ -1,6 +1,6 @@
 /**
- * Garante contas demo acessíveis quando SEED_DEMO_DATA=true.
- * Corrige banco persistente no Render que ficou sem usuários ou com senhas alteradas.
+ * Garante contas demo acessíveis.
+ * SEMPRE cria usuários se o banco estiver vazio (independe de variáveis de ambiente).
  */
 import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcryptjs';
@@ -20,29 +20,23 @@ const DEMO_ACCOUNTS = [
 ];
 
 export async function ensureDemoAccess() {
-  if (!shouldEnsureDemoData()) {
-    const db = getDb();
-    const userCount = (db.prepare('SELECT COUNT(*) as c FROM users').get() as { c: number }).c;
-    if (userCount === 0) {
-      console.warn('[demo] AVISO: banco sem usuários e seed demo desabilitado (SEED_DEMO_DATA=false).');
-    }
-    return;
-  }
-
   const db = getDb();
   const userCount = (db.prepare('SELECT COUNT(*) as c FROM users').get() as { c: number }).c;
 
+  // Banco vazio: sempre cria usuários (corrige Render sem env vars)
   if (userCount === 0) {
-    console.log('[demo] Banco vazio — executando seed completo...');
+    console.log('[demo] Banco vazio — criando usuários demo...');
     const { runDemoSeed } = await import('./seed-demo');
     await runDemoSeed();
     clearLoginAttempts(db);
+    console.log('[demo] OK: admin.geral/admin123 | ctrl.pelotao1/pelotao1 | disc.2026001/discente123');
     return;
   }
 
-  console.log(`[demo] Sincronizando credenciais demo (${userCount} usuários existentes)...`);
+  if (!shouldEnsureDemoData()) return;
 
-  // Garante 8 pelotões
+  console.log(`[demo] Sincronizando credenciais demo (${userCount} usuários)...`);
+
   for (let i = 1; i <= 8; i++) {
     const existing = db.prepare('SELECT id FROM pelotoes WHERE numero = ?').get(i) as { id: string } | undefined;
     if (!existing) {
@@ -52,15 +46,11 @@ export async function ensureDemoAccess() {
 
   for (const account of DEMO_ACCOUNTS) {
     const hash = await bcrypt.hash(account.password, 12);
-    const existing = db.prepare('SELECT id, role FROM users WHERE login = ?').get(account.login) as
-      | { id: string; role: string }
-      | undefined;
+    const existing = db.prepare('SELECT id FROM users WHERE login = ?').get(account.login) as { id: string } | undefined;
 
     if (existing) {
       db.prepare(`
-        UPDATE users
-        SET password_hash = ?, ativo = 1, updated_at = datetime('now')
-        WHERE login = ?
+        UPDATE users SET password_hash = ?, ativo = 1, updated_at = datetime('now') WHERE login = ?
       `).run(hash, account.login);
       continue;
     }
@@ -74,11 +64,8 @@ export async function ensureDemoAccess() {
     }
 
     if (account.role === 'CONTROLADOR_PELOTÃO' && 'pelotaoNumero' in account) {
-      const pelotao = db.prepare('SELECT id FROM pelotoes WHERE numero = ?').get(account.pelotaoNumero) as
-        | { id: string }
-        | undefined;
+      const pelotao = db.prepare('SELECT id FROM pelotoes WHERE numero = ?').get(account.pelotaoNumero) as { id: string } | undefined;
       if (!pelotao) continue;
-
       const controladorId = uuidv4();
       db.prepare(`
         INSERT INTO users (id, login, password_hash, nome, role, pelotao_id, ativo)
@@ -91,7 +78,6 @@ export async function ensureDemoAccess() {
     if (account.role === 'DISCENTE') {
       const pelotao = db.prepare('SELECT id FROM pelotoes WHERE numero = 1').get() as { id: string } | undefined;
       if (!pelotao) continue;
-
       const discenteId = uuidv4();
       const userId = uuidv4();
       db.prepare(`
@@ -106,13 +92,12 @@ export async function ensureDemoAccess() {
   }
 
   clearLoginAttempts(db);
-  console.log('[demo] Credenciais prontas: admin.geral/admin123 | ctrl.pelotao1/pelotao1 | disc.2026001/discente123');
 }
 
 function clearLoginAttempts(db: ReturnType<typeof getDb>) {
   try {
     db.prepare('DELETE FROM login_attempts').run();
   } catch {
-    // tabela pode não existir em schemas antigos
+    // ignore
   }
 }

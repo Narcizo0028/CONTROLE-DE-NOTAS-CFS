@@ -7,9 +7,17 @@ function isEphemeralServerlessHost() {
   return Boolean(process.env.VERCEL || process.env.NETLIFY || process.env.NETLIFY_DEV);
 }
 
+function isRenderHost() {
+  return Boolean(
+    process.env.RENDER
+    || process.env.RENDER_SERVICE_NAME
+    || process.env.RENDER_EXTERNAL_URL
+  );
+}
+
 function resolveDataDir(): string {
   if (process.env.DATABASE_DIR) return process.env.DATABASE_DIR;
-  if (process.env.RENDER) return '/var/data';
+  if (isRenderHost()) return '/var/data';
   if (isEphemeralServerlessHost()) return '/tmp/cfs2026-data';
   return path.join(process.cwd(), 'data');
 }

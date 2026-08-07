@@ -1,5 +1,5 @@
 /**
- * Inicialização lazy (serverless) e garantia de seed/credenciais demo.
+ * Inicialização lazy — sempre garante usuários se banco vazio.
  */
 let bootstrapped = false;
 let bootstrapping: Promise<void> | null = null;
@@ -11,13 +11,8 @@ export async function ensureRuntimeReady() {
   bootstrapping = (async () => {
     const { getDb } = await import('./db');
     getDb();
-
-    const { shouldEnsureDemoData } = await import('./demo-config');
-    if (shouldEnsureDemoData()) {
-      const { ensureDemoAccess } = await import('./ensure-demo');
-      await ensureDemoAccess();
-    }
-
+    const { ensureDemoAccess } = await import('./ensure-demo');
+    await ensureDemoAccess();
     bootstrapped = true;
   })();
 
