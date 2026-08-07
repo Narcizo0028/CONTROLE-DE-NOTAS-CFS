@@ -29,6 +29,7 @@ export async function GET() {
         SEED_DEMO_DATA: process.env.SEED_DEMO_DATA ?? '(não definido)',
         DATABASE_DIR: process.env.DATABASE_DIR ?? '(auto)',
         RENDER: process.env.RENDER ?? '(não definido)',
+        JWT_SECRET: process.env.JWT_SECRET ? '(definido)' : '(derivado do serviço)',
       },
     });
   } catch (error) {
