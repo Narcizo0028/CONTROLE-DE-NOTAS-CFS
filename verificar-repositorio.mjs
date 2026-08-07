@@ -7,9 +7,11 @@ const requiredDirs = ['app', 'components', 'lib', 'public'];
 const requiredFiles = [
   'package.json',
   'render.yaml',
+  'vercel.json',
   'middleware.ts',
   'next.config.js',
   'lib/render-bootstrap.ts',
+  'lib/runtime-ready.ts',
   'lib/db.ts',
   'app/layout.tsx',
   'public/images/escudo-efas.png',
@@ -51,7 +53,7 @@ if (bad.length > 0) {
 
 console.log('');
 if (ok) {
-  console.log('Estrutura OK para deploy no Render.');
+  console.log('Estrutura OK para deploy no Render, Vercel e Netlify.');
   process.exit(0);
 }
 

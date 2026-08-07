@@ -3,8 +3,25 @@ import path from 'path';
 import fs from 'fs';
 import { ensureDisciplinasOficiais } from './seed-disciplinas';
 
-const DB_DIR = process.env.DATABASE_DIR || path.join(process.cwd(), 'data');
-const DB_PATH = process.env.DATABASE_PATH || path.join(DB_DIR, 'cfs2026.db');
+function isEphemeralServerlessHost() {
+  return Boolean(process.env.VERCEL || process.env.NETLIFY || process.env.NETLIFY_DEV);
+}
+
+function getDbPaths() {
+  if (process.env.DATABASE_PATH) {
+    return {
+      dir: path.dirname(process.env.DATABASE_PATH),
+      file: process.env.DATABASE_PATH,
+    };
+  }
+
+  const dir = process.env.DATABASE_DIR
+    || (isEphemeralServerlessHost()
+      ? '/tmp/cfs2026-data'
+      : path.join(process.cwd(), 'data'));
+
+  return { dir, file: path.join(dir, 'cfs2026.db') };
+}
 
 export type DbInstance = DatabaseSync & {
   transaction: (fn: () => void) => () => void;
@@ -84,10 +101,11 @@ function migrateSchema(database: DatabaseSync) {
 
 export function getDb(): DbInstance {
   if (!db) {
-    if (!fs.existsSync(DB_DIR)) {
-      fs.mkdirSync(DB_DIR, { recursive: true });
+    const { dir, file } = getDbPaths();
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
     }
-    const database = new DatabaseSync(DB_PATH);
+    const database = new DatabaseSync(file);
     database.exec('PRAGMA journal_mode = WAL');
     database.exec('PRAGMA foreign_keys = ON');
     db = wrapDatabase(database);
@@ -236,9 +254,10 @@ export function closeDb() {
 
 export function resetDb() {
   closeDb();
-  if (fs.existsSync(DB_PATH)) fs.unlinkSync(DB_PATH);
-  if (fs.existsSync(`${DB_PATH}-wal`)) fs.unlinkSync(`${DB_PATH}-wal`);
-  if (fs.existsSync(`${DB_PATH}-shm`)) fs.unlinkSync(`${DB_PATH}-shm`);
+  const { file } = getDbPaths();
+  if (fs.existsSync(file)) fs.unlinkSync(file);
+  if (fs.existsSync(`${file}-wal`)) fs.unlinkSync(`${file}-wal`);
+  if (fs.existsSync(`${file}-shm`)) fs.unlinkSync(`${file}-shm`);
   getDb();
 }
 

@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { login, createSession, setSessionCookie } from '@/lib/auth';
+import { ensureRuntimeReady } from '@/lib/runtime-ready';
+
+export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
+    await ensureRuntimeReady();
     const { login: loginName, password } = await request.json();
 
     if (!loginName || !password) {
