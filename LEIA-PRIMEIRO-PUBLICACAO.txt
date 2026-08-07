@@ -1,0 +1,35 @@
+CFS 2026 — PUBLICAR NO RENDER v1.0.2
+====================================
+
+PROBLEMA ATUAL NO SEU GITHUB
+----------------------------
+O repositório https://github.com/Narcizo0028/CONTROLE-DE-NOTAS-CFS
+está com arquivos SOLTOS na raiz (AppLayout.tsx, auth.ts, page (25).tsx...)
+SEM a pasta app/. Por isso o Render falha.
+
+SOLUÇÃO (OBRIGATÓRIA)
+---------------------
+1. No GitHub: APAGUE todos os arquivos atuais do repositório
+2. Extraia o ZIP da Área de Trabalho:
+   CFS-2026-NOTAS-RENDER-v1.0.2.zip
+3. Envie TODO o conteúdo extraído para a RAIZ do GitHub
+4. Confirme que existe a PASTA app/ (não só page.tsx solto)
+5. Render → Manual Deploy
+
+VALIDAR LOCALMENTE
+------------------
+npm run verify
+npm run build
+
+RENDER
+------
+- Tipo: Web Service (NÃO Static Site)
+- Publish Directory: VAZIO
+- Node: 22.12.0
+- Blueprint: render.yaml
+
+LOGIN APÓS DEPLOY
+-----------------
+admin.geral / admin123
+
+Detalhes: BUGS-RECORRENTES.md e PUBLICAR-RENDER.md

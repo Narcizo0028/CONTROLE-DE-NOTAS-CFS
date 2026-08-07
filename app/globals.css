@@ -1,0 +1,108 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-pmmg-khaki-50 text-pmmg-black antialiased;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wide;
+  }
+  .btn-primary {
+    @apply btn bg-pmmg-gold-400 text-pmmg-black hover:bg-pmmg-gold-300 focus:ring-pmmg-gold-500 shadow-pmmg-gold;
+  }
+  .btn-secondary {
+    @apply btn bg-pmmg-gray-200 text-pmmg-black hover:bg-pmmg-gray-300 focus:ring-pmmg-gray-400 border border-pmmg-gray-300;
+  }
+  .btn-danger {
+    @apply btn bg-red-700 text-white hover:bg-red-800 focus:ring-red-500;
+  }
+  .btn-success {
+    @apply btn bg-pmmg-khaki-600 text-white hover:bg-pmmg-khaki-700 focus:ring-pmmg-khaki-500;
+  }
+  .input {
+    @apply w-full rounded-lg border border-pmmg-gray-300 bg-white px-3 py-2.5 text-sm text-pmmg-black placeholder:text-pmmg-gray-400 focus:border-pmmg-gold-400 focus:outline-none focus:ring-1 focus:ring-pmmg-gold-400;
+  }
+  .label {
+    @apply block text-sm font-semibold text-pmmg-gray-700 mb-1 uppercase tracking-wide;
+  }
+  .card {
+    @apply bg-white rounded-xl shadow-pmmg border border-pmmg-khaki-200 p-6;
+  }
+  .badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold;
+  }
+  .badge-green {
+    @apply badge bg-pmmg-khaki-100 text-pmmg-khaki-800 border border-pmmg-khaki-300;
+  }
+  .badge-red {
+    @apply badge bg-red-100 text-red-800 border border-red-200;
+  }
+  .badge-yellow {
+    @apply badge bg-pmmg-gold-100 text-pmmg-gold-800 border border-pmmg-gold-300;
+  }
+  .badge-blue {
+    @apply badge bg-pmmg-gray-100 text-pmmg-gray-800 border border-pmmg-gray-300;
+  }
+  .table-container {
+    @apply overflow-x-auto rounded-lg border border-pmmg-khaki-200;
+  }
+  .data-table {
+    @apply min-w-full divide-y divide-pmmg-khaki-200 text-sm;
+  }
+  .data-table thead {
+    @apply bg-pmmg-khaki-100;
+  }
+  .data-table th {
+    @apply px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-pmmg-black;
+  }
+  .data-table td {
+    @apply px-4 py-3 whitespace-nowrap text-pmmg-gray-800;
+  }
+  .data-table tbody tr {
+    @apply border-t border-pmmg-khaki-100 hover:bg-pmmg-khaki-50;
+  }
+  .censored {
+    @apply blur-[3px] select-none;
+  }
+  .sidebar-link-active {
+    @apply bg-pmmg-gold-400/20 text-pmmg-gold-300 border-l-4 border-pmmg-gold-400;
+  }
+  .sidebar-link {
+    @apply flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-pmmg-gray-300 hover:bg-pmmg-black-light hover:text-pmmg-gold-300 transition-colors border-l-4 border-transparent;
+  }
+  .page-header {
+    @apply bg-pmmg-black text-white border-b-4 border-pmmg-gold-400;
+  }
+  .escudo-efas {
+    @apply object-contain;
+  }
+  .escudo-on-dark {
+    mix-blend-mode: screen;
+  }
+  .dashboard-panel {
+    @apply bg-white rounded-xl shadow-pmmg border border-pmmg-khaki-200 overflow-hidden;
+  }
+  .dashboard-panel-header {
+    @apply flex items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4 border-b border-pmmg-khaki-200 bg-pmmg-khaki-50/80;
+  }
+  .dashboard-panel-title {
+    @apply text-sm sm:text-base font-bold uppercase tracking-wide text-pmmg-black flex items-center gap-2;
+  }
+  .dashboard-panel-body {
+    @apply p-4 sm:p-6;
+  }
+  .dashboard-hero {
+    @apply rounded-xl border border-pmmg-khaki-300 bg-gradient-to-r from-pmmg-black via-pmmg-black-light to-pmmg-black text-white p-4 sm:p-6 shadow-pmmg;
+  }
+  .quick-link {
+    @apply flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-pmmg-khaki-200 bg-white p-4 text-center text-xs sm:text-sm font-bold uppercase tracking-wide text-pmmg-black hover:border-pmmg-gold-400 hover:bg-pmmg-gold-50 transition-all shadow-sm;
+  }
+  .quick-link-primary {
+    @apply quick-link border-pmmg-gold-400 bg-pmmg-gold-400 text-pmmg-black hover:bg-pmmg-gold-300;
+  }
+}

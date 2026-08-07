@@ -1,0 +1,60 @@
+COMO FAZER A PASTA app/ APARECER NO GITHUB
+==========================================
+
+PROBLEMA
+--------
+No upload pelo site github.com, muita gente abre a pasta "app",
+seleciona os arquivos DE DENTRO e envia — aí NO GITHUB fica
+page.tsx, route.ts soltos na raiz, SEM a pasta app/.
+
+SOLUCAO 1 — PASTA PRONTA + GIT (RECOMENDADO)
+--------------------------------------------
+1. Execute no PowerShell:
+
+   cd "C:\Users\Isaias Narcizo\Desktop\BASE-OFICIAL-RESTRICAO-LAYOUT-MODELO-2026-07-31"
+   .\scripts\preparar-github.ps1
+
+2. Abrira a pasta: Desktop\CFS-2026-PARA-GITHUB
+3. Confirme no Explorer: existe pasta amarela "app" ao lado de package.json
+
+4. Instale Git se nao tiver: https://git-scm.com/download/win
+
+5. No PowerShell:
+
+   cd "$env:USERPROFILE\Desktop\CFS-2026-PARA-GITHUB"
+   git init
+   git add .
+   git status
+   (deve listar "new file: app/...")
+
+   git commit -m "CFS 2026 estrutura completa com pasta app"
+   git branch -M main
+   git remote add origin https://github.com/Narcizo0028/CONTROLE-DE-NOTAS-CFS.git
+   git push -u origin main --force
+
+6. No GitHub, atualize a pagina — deve aparecer a pasta "app"
+
+SOLUCAO 2 — UPLOAD NO SITE (CUIDADO)
+------------------------------------
+1. APAGUE todos os arquivos atuais do repositorio GitHub
+2. Add file → Upload files
+3. Arraste a PASTA INTEIRA "app" (icone de pasta amarela)
+   NAO arraste os arquivos de dentro dela
+4. Arraste tambem: components, lib, public, scripts
+5. Arraste os arquivos da raiz: package.json, render.yaml, etc.
+
+COMO SABER SE DEU CERTO
+-----------------------
+Na raiz do GitHub deve aparecer:
+
+   app/          <- PASTA (clique para abrir)
+   components/
+   lib/
+   package.json
+
+NAO deve aparecer na raiz:
+   page (25).tsx
+   AppLayout.tsx
+   auth.ts
+
+Depois: Render → Manual Deploy

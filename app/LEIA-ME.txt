@@ -1,0 +1,2 @@
+Esta pasta e obrigatoria. Nao apague.
+O sistema Next.js exige app/ na raiz do repositorio GitHub.

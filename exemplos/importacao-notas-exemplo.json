@@ -1,0 +1,32 @@
+[
+  {
+    "matricula": "2026001",
+    "disciplina": "Direito Penal",
+    "trabalho": 3,
+    "avc": 2,
+    "avf": 4
+  },
+  {
+    "matricula": "2026002",
+    "disciplina": "Análise Criminal",
+    "trabalho": 2,
+    "avf": 6
+  },
+  {
+    "matricula": "2026003",
+    "disciplina": "Defesa Pessoal Policial",
+    "trabalho_1": 2,
+    "trabalho_2": 1,
+    "avf": 5
+  },
+  {
+    "matricula": "2026001",
+    "disciplina": "APMI – Atividades Policiais e Militares Interdisciplinares",
+    "situacao": "APTO"
+  },
+  {
+    "matricula": "2026002",
+    "disciplina": "Armamento e Tiro Policial",
+    "situacao": "INAPTO"
+  }
+]

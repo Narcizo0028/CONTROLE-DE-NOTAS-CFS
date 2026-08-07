@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: cfs-2026-notas
+    runtime: node
+    plan: starter
+    region: oregon
+    buildCommand: npm install && npm run build
+    startCommand: npm run start:render
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 22.12.0
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: SEED_DEMO_DATA
+        value: "true"
+      - key: DATABASE_DIR
+        value: /var/data
+    disk:
+      name: cfs2026-data
+      mountPath: /var/data
+      sizeGB: 1

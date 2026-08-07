@@ -1,0 +1,251 @@
+import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
+import path from 'path';
+import fs from 'fs';
+import { ensureDisciplinasOficiais } from './seed-disciplinas';
+
+const DB_DIR = process.env.DATABASE_DIR || path.join(process.cwd(), 'data');
+const DB_PATH = process.env.DATABASE_PATH || path.join(DB_DIR, 'cfs2026.db');
+
+export type DbInstance = DatabaseSync & {
+  transaction: (fn: () => void) => () => void;
+};
+
+let db: DbInstance | null = null;
+
+function wrapDatabase(database: DatabaseSync): DbInstance {
+  const wrapped = database as DbInstance;
+  wrapped.transaction = (fn: () => void) => {
+    return () => {
+      database.exec('BEGIN');
+      try {
+        fn();
+        database.exec('COMMIT');
+      } catch (error) {
+        database.exec('ROLLBACK');
+        throw error;
+      }
+    };
+  };
+  return wrapped;
+}
+
+function columnExists(database: DatabaseSync, table: string, column: string): boolean {
+  const cols = database.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
+  return cols.some((c) => c.name === column);
+}
+
+function migrateSchema(database: DatabaseSync) {
+  const disciplinaCols: [string, string][] = [
+    ['carga_horaria', 'INTEGER NOT NULL DEFAULT 0'],
+    ['tipo_avaliacao', "TEXT NOT NULL DEFAULT 'NUMERICA'"],
+    ['possui_avc', 'INTEGER NOT NULL DEFAULT 0'],
+    ['possui_avf', 'INTEGER NOT NULL DEFAULT 1'],
+    ['qtd_trabalhos', 'INTEGER NOT NULL DEFAULT 1'],
+    ['max_trabalho', 'REAL NOT NULL DEFAULT 3'],
+    ['max_trabalho_1', 'REAL NOT NULL DEFAULT 0'],
+    ['max_trabalho_2', 'REAL NOT NULL DEFAULT 0'],
+    ['max_avc', 'REAL NOT NULL DEFAULT 0'],
+    ['max_avf', 'REAL NOT NULL DEFAULT 7'],
+    ['participa_ranking', 'INTEGER NOT NULL DEFAULT 1'],
+    ['participa_media', 'INTEGER NOT NULL DEFAULT 1'],
+    ['ordem', 'INTEGER NOT NULL DEFAULT 0'],
+  ];
+
+  for (const [col, def] of disciplinaCols) {
+    if (!columnExists(database, 'disciplinas', col)) {
+      database.exec(`ALTER TABLE disciplinas ADD COLUMN ${col} ${def}`);
+    }
+  }
+
+  const notaCols: [string, string][] = [
+    ['trabalho', 'REAL'],
+    ['trabalho_1', 'REAL'],
+    ['trabalho_2', 'REAL'],
+    ['avc', 'REAL'],
+    ['avf', 'REAL'],
+    ['situacao', 'TEXT'],
+    ['nota_final', 'REAL'],
+  ];
+
+  for (const [col, def] of notaCols) {
+    if (!columnExists(database, 'notas', col)) {
+      database.exec(`ALTER TABLE notas ADD COLUMN ${col} ${def}`);
+    }
+  }
+
+  // Migrar pontos_obtidos legados para nota_final
+  if (columnExists(database, 'notas', 'nota_final')) {
+    database.exec(`
+      UPDATE notas SET nota_final = pontos_obtidos, trabalho = pontos_obtidos
+      WHERE nota_final IS NULL AND pontos_obtidos IS NOT NULL
+    `);
+  }
+}
+
+export function getDb(): DbInstance {
+  if (!db) {
+    if (!fs.existsSync(DB_DIR)) {
+      fs.mkdirSync(DB_DIR, { recursive: true });
+    }
+    const database = new DatabaseSync(DB_PATH);
+    database.exec('PRAGMA journal_mode = WAL');
+    database.exec('PRAGMA foreign_keys = ON');
+    db = wrapDatabase(database);
+    initializeSchema(db);
+    migrateSchema(db);
+    ensureDisciplinasOficiais(db);
+  }
+  return db;
+}
+
+function initializeSchema(database: DbInstance) {
+  database.exec(`
+    CREATE TABLE IF NOT EXISTS pelotoes (
+      id TEXT PRIMARY KEY,
+      numero INTEGER NOT NULL UNIQUE,
+      nome TEXT NOT NULL,
+      controlador_id TEXT,
+      ultima_atualizacao TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS users (
+      id TEXT PRIMARY KEY,
+      login TEXT NOT NULL UNIQUE,
+      password_hash TEXT NOT NULL,
+      nome TEXT NOT NULL,
+      role TEXT NOT NULL CHECK(role IN ('CONTROLADOR_GERAL', 'CONTROLADOR_PELOTÃO', 'DISCENTE')),
+      pelotao_id TEXT REFERENCES pelotoes(id),
+      discente_id TEXT,
+      ativo INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS discentes (
+      id TEXT PRIMARY KEY,
+      nome TEXT NOT NULL,
+      matricula TEXT NOT NULL UNIQUE,
+      pelotao_id TEXT NOT NULL REFERENCES pelotoes(id),
+      data_ingresso TEXT NOT NULL,
+      user_id TEXT REFERENCES users(id),
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS disciplinas (
+      id TEXT PRIMARY KEY,
+      nome TEXT NOT NULL UNIQUE,
+      descricao TEXT,
+      carga_horaria INTEGER NOT NULL DEFAULT 0,
+      tipo_avaliacao TEXT NOT NULL DEFAULT 'NUMERICA' CHECK(tipo_avaliacao IN ('NUMERICA', 'APTO_INAPTO')),
+      possui_avc INTEGER NOT NULL DEFAULT 0,
+      possui_avf INTEGER NOT NULL DEFAULT 1,
+      qtd_trabalhos INTEGER NOT NULL DEFAULT 1,
+      max_trabalho REAL NOT NULL DEFAULT 3,
+      max_trabalho_1 REAL NOT NULL DEFAULT 0,
+      max_trabalho_2 REAL NOT NULL DEFAULT 0,
+      max_avc REAL NOT NULL DEFAULT 0,
+      max_avf REAL NOT NULL DEFAULT 7,
+      pontos_distribuidos REAL NOT NULL DEFAULT 10,
+      participa_ranking INTEGER NOT NULL DEFAULT 1,
+      participa_media INTEGER NOT NULL DEFAULT 1,
+      ordem INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS notas (
+      id TEXT PRIMARY KEY,
+      discente_id TEXT NOT NULL REFERENCES discentes(id),
+      disciplina_id TEXT NOT NULL REFERENCES disciplinas(id),
+      trabalho REAL,
+      trabalho_1 REAL,
+      trabalho_2 REAL,
+      avc REAL,
+      avf REAL,
+      situacao TEXT CHECK(situacao IN ('APTO', 'INAPTO')),
+      nota_final REAL,
+      pontos_obtidos REAL NOT NULL DEFAULT 0,
+      lancado_por_id TEXT NOT NULL REFERENCES users(id),
+      tipo_lancamento TEXT NOT NULL CHECK(tipo_lancamento IN ('CONTROLADOR_GERAL', 'CONTROLADOR_PELOTÃO', 'DISCENTE')),
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      UNIQUE(discente_id, disciplina_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS autorizacoes_discente (
+      id TEXT PRIMARY KEY,
+      pelotao_id TEXT NOT NULL REFERENCES pelotoes(id),
+      disciplina_id TEXT NOT NULL REFERENCES disciplinas(id),
+      status TEXT NOT NULL DEFAULT 'BLOQUEADA' CHECK(status IN ('ATIVA', 'BLOQUEADA')),
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      UNIQUE(pelotao_id, disciplina_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS audit_log (
+      id TEXT PRIMARY KEY,
+      user_id TEXT,
+      user_nome TEXT,
+      user_role TEXT,
+      pelotao_id TEXT,
+      discente_id TEXT,
+      disciplina_id TEXT,
+      tipo_avaliacao TEXT,
+      valor_anterior TEXT,
+      valor_novo TEXT,
+      acao TEXT NOT NULL,
+      motivo TEXT,
+      ip_address TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS login_attempts (
+      id TEXT PRIMARY KEY,
+      login TEXT NOT NULL,
+      ip_address TEXT,
+      success INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS backups (
+      id TEXT PRIMARY KEY,
+      filename TEXT NOT NULL,
+      created_by TEXT REFERENCES users(id),
+      tipo TEXT NOT NULL CHECK(tipo IN ('MANUAL', 'AUTOMATICO', 'RESTAURACAO')),
+      descricao TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_notas_discente ON notas(discente_id);
+    CREATE INDEX IF NOT EXISTS idx_notas_disciplina ON notas(disciplina_id);
+    CREATE INDEX IF NOT EXISTS idx_discentes_pelotao ON discentes(pelotao_id);
+    CREATE INDEX IF NOT EXISTS idx_audit_created ON audit_log(created_at);
+    CREATE INDEX IF NOT EXISTS idx_audit_user ON audit_log(user_id);
+    CREATE INDEX IF NOT EXISTS idx_disciplinas_ordem ON disciplinas(ordem);
+  `);
+}
+
+export function closeDb() {
+  if (db) {
+    db.close();
+    db = null;
+  }
+}
+
+export function resetDb() {
+  closeDb();
+  if (fs.existsSync(DB_PATH)) fs.unlinkSync(DB_PATH);
+  if (fs.existsSync(`${DB_PATH}-wal`)) fs.unlinkSync(`${DB_PATH}-wal`);
+  if (fs.existsSync(`${DB_PATH}-shm`)) fs.unlinkSync(`${DB_PATH}-shm`);
+  getDb();
+}
+
+export function queryAll<T>(sql: string, ...params: SQLInputValue[]): T[] {
+  return getDb().prepare(sql).all(...params) as unknown as T[];
+}
+
+export function queryGet<T>(sql: string, ...params: SQLInputValue[]): T | undefined {
+  return getDb().prepare(sql).get(...params) as unknown as T | undefined;
+}
