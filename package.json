@@ -17,6 +17,7 @@
     "test:persistencia": "node --experimental-sqlite --import tsx scripts/teste-persistencia.mjs",
     "db:seed": "node --experimental-sqlite --import tsx scripts/seed.ts",
     "db:reset": "node --experimental-sqlite --import tsx scripts/reset-db.ts",
+    "db:remover-discentes-demo": "node --experimental-sqlite --import tsx scripts/remover-discentes-demo.ts",
     "db:bootstrap": "node --experimental-sqlite --import tsx lib/render-bootstrap.ts"
   },
   "dependencies": {
