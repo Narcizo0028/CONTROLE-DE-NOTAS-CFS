@@ -54,10 +54,10 @@ export async function POST(request: NextRequest) {
   const auth = await requireAuth();
   if (auth instanceof Response) return auth;
 
-  const { nome, matricula, pelotao_id, data_ingresso, criar_login, login, senha } = await request.json();
+  const { nome, matricula, pelotao_id, criar_login, login, senha } = await request.json();
 
-  if (!nome || !matricula || !pelotao_id || !data_ingresso) {
-    return apiError('Nome, matrícula, pelotão e data de ingresso são obrigatórios');
+  if (!nome || !matricula || !pelotao_id) {
+    return apiError('Nome, matrícula e pelotão são obrigatórios');
   }
 
   if (!canAccessPelotao(auth.user, pelotao_id) && !isControladorGeral(auth.user)) {
@@ -65,37 +65,44 @@ export async function POST(request: NextRequest) {
   }
 
   const db = getDb();
+  const pelotao = db.prepare('SELECT id FROM pelotoes WHERE id = ?').get(pelotao_id);
+  if (!pelotao) return apiError('Pelotão não encontrado');
   const existing = db.prepare('SELECT id FROM discentes WHERE matricula = ?').get(matricula);
   if (existing) return apiError('Matrícula já cadastrada');
 
   const id = uuidv4();
   let userId: string | null = null;
+  let passwordHash: string | null = null;
 
   if (criar_login && login && senha) {
     const existingUser = db.prepare('SELECT id FROM users WHERE login = ?').get(login);
     if (existingUser) return apiError('Login já existe');
 
     userId = uuidv4();
-    const passwordHash = await hashPassword(senha);
-    db.prepare(`
-      INSERT INTO users (id, login, password_hash, nome, role, pelotao_id, discente_id)
-      VALUES (?, ?, ?, ?, 'DISCENTE', ?, ?)
-    `).run(userId, login, passwordHash, nome, pelotao_id, id);
+    passwordHash = await hashPassword(senha);
   }
 
-  db.prepare(`
-    INSERT INTO discentes (id, nome, matricula, pelotao_id, data_ingresso, user_id)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `).run(id, nome, matricula, pelotao_id, data_ingresso, userId);
+  db.transaction(() => {
+    if (userId && passwordHash) {
+      db.prepare(`
+        INSERT INTO users (id, login, password_hash, nome, role, pelotao_id, discente_id)
+        VALUES (?, ?, ?, ?, 'DISCENTE', ?, ?)
+      `).run(userId, login, passwordHash, nome, pelotao_id, id);
+    }
+    db.prepare(`
+      INSERT INTO discentes (id, nome, matricula, pelotao_id, data_ingresso, user_id)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(id, nome, matricula, pelotao_id, new Date().toISOString().slice(0, 10), userId);
 
-  logAudit({
-    user: auth.user,
-    pelotao_id,
-    discente_id: id,
-    acao: 'CADASTRO',
-    valor_novo: JSON.stringify({ nome, matricula }),
-    motivo: 'Cadastro de discente',
-  });
+    logAudit({
+      user: auth.user,
+      pelotao_id,
+      discente_id: id,
+      acao: 'CADASTRO',
+      valor_novo: JSON.stringify({ nome, matricula }),
+      motivo: 'Cadastro de discente',
+    });
+  })();
 
-  return apiSuccess({ id, nome, matricula, pelotao_id, data_ingresso, user_id: userId }, 201);
+  return apiSuccess({ id, nome, matricula, pelotao_id, user_id: userId }, 201);
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
 import type { SessionUser } from '@/lib/types';
 
 interface AuthContextType {
@@ -18,6 +19,7 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
   const [user, setUser] = useState<SessionUser | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -44,8 +46,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    if (pathname === '/login') {
+      setLoading(false);
+      return;
+    }
     refresh();
-  }, []);
+  }, [pathname]);
 
   return (
     <AuthContext.Provider value={{ user, loading, logout, refresh }}>

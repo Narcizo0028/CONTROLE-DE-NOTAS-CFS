@@ -16,7 +16,6 @@ const DEMO_ACCOUNTS = [
     nome: `Controlador ${i + 1}º Pelotão`,
     pelotaoNumero: i + 1,
   })),
-  { login: 'disc.2026001', password: 'discente123', role: 'DISCENTE' as const, nome: 'João Silva P1' },
 ];
 
 export async function ensureDemoAccess() {
@@ -88,20 +87,6 @@ async function syncDemoAccounts(db: ReturnType<typeof getDb>) {
       continue;
     }
 
-    if (account.role === 'DISCENTE') {
-      const pelotao = db.prepare('SELECT id FROM pelotoes WHERE numero = 1').get() as { id: string } | undefined;
-      if (!pelotao) continue;
-      const discenteId = uuidv4();
-      const userId = uuidv4();
-      db.prepare(`
-        INSERT INTO users (id, login, password_hash, nome, role, pelotao_id, discente_id, ativo)
-        VALUES (?, ?, ?, ?, 'DISCENTE', ?, ?, 1)
-      `).run(userId, account.login, hash, account.nome, pelotao.id, discenteId);
-      db.prepare(`
-        INSERT INTO discentes (id, nome, matricula, pelotao_id, data_ingresso, user_id)
-        VALUES (?, ?, ?, ?, ?, ?)
-      `).run(discenteId, account.nome, '2026001', pelotao.id, '2026-01-10', userId);
-    }
   }
 }
 

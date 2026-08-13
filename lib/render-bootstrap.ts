@@ -31,12 +31,8 @@ async function bootstrap() {
   getDb();
   console.log(`[bootstrap] Banco em: ${getDataDir()}`);
 
-  if (shouldEnsureDemoData()) {
-    console.log('[bootstrap] Garantindo acesso demo...');
-    await ensureDemoAccess();
-  } else {
-    console.log('[bootstrap] Apenas schema e disciplinas oficiais.');
-  }
+  if (shouldEnsureDemoData()) await ensureDemoAccess();
+  console.log('[bootstrap] Schema e disciplinas oficiais prontos.');
 
   closeDb();
   console.log('[bootstrap] Concluído.');

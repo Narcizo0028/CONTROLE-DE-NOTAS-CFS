@@ -98,7 +98,8 @@ export async function POST(request: NextRequest) {
   };
 
   try {
-    const result = salvarNota(db, {
+    const result = db.transaction(() => {
+      return salvarNota(db, {
       discente_id,
       disciplina_id,
       pelotao_id: discente.pelotao_id,
@@ -107,7 +108,8 @@ export async function POST(request: NextRequest) {
       user: auth.user,
       tipoLancamento: getTipoLancamento(auth.user.role),
       motivo,
-    });
+      });
+    })();
     return apiSuccess(result, result.created ? 201 : 200);
   } catch (e) {
     return apiError(e instanceof Error ? e.message : 'Erro ao salvar nota');

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { login, createSession } from '@/lib/auth';
-import { ensureRuntimeReady } from '@/lib/runtime-ready';
 import { COOKIE_NAME, SESSION_DURATION } from '@/lib/session';
 
 export const runtime = 'nodejs';
@@ -14,8 +13,6 @@ function isHttps(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    await ensureRuntimeReady();
-
     const body = await request.json();
     const loginName = String(body.login ?? '').trim().toLowerCase();
     const password = String(body.password ?? '');

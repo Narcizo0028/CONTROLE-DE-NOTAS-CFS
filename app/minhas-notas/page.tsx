@@ -135,7 +135,7 @@ export default function MinhasNotasPage() {
                 {formatMedia(
                   calcMedia(
                     notasNumericas.reduce((s, n) => s + n.pontos_obtidos, 0),
-                    Math.max(notasNumericas.reduce((s, n) => s + n.pontos_distribuidos, 0), 1)
+                    notasNumericas.reduce((s, n) => s + n.pontos_distribuidos, 0)
                   )
                 )}
               </strong>

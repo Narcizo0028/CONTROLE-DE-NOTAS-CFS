@@ -25,16 +25,51 @@ export function formatDate(dateStr: string | null | undefined): string {
   }
 }
 
-export function calcMedia(pontosObtidos: number, pontosDistribuidos: number): number {
-  return pontosDistribuidos > 0 ? (pontosObtidos / pontosDistribuidos) * 10 : 0;
+export function converterNumero(valor: unknown): number {
+  if (typeof valor === 'number') return Number.isFinite(valor) ? valor : 0;
+
+  return (
+    Number(
+      String(valor ?? 0)
+        .replace(/\./g, '')
+        .replace(',', '.')
+    ) || 0
+  );
+}
+
+/** Média bruta (0–10), sem truncar — usada na ordenação do ranking. */
+export function calcMediaRaw(pontosObtidos: unknown, pontosDistribuidos: unknown): number {
+  const obtidos = converterNumero(pontosObtidos);
+  const distribuidos = converterNumero(pontosDistribuidos);
+
+  if (distribuidos <= 0) return 0;
+
+  const mediaCalculada = (obtidos / distribuidos) * 10;
+  return Number.isFinite(mediaCalculada) ? mediaCalculada : 0;
+}
+
+/** Trunca em duas casas decimais, sem arredondar. */
+export function truncarMedia(valor: number): number {
+  if (!Number.isFinite(valor)) return 0;
+  return Math.floor(valor * 100) / 100;
+}
+
+export function calcMedia(pontosObtidos: unknown, pontosDistribuidos: unknown): number {
+  return truncarMedia(calcMediaRaw(pontosObtidos, pontosDistribuidos));
 }
 
 export function formatPercent(value: number): string {
   return `${value.toFixed(2)}%`;
 }
 
-export function formatMedia(value: number): string {
-  return value.toFixed(2).replace('.', ',');
+export function formatMedia(value: unknown): string {
+  const num = typeof value === 'number' ? value : converterNumero(value);
+  const media = truncarMedia(num);
+
+  return media.toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }
 
 export function censorName(name: string, isSelf: boolean): string {

@@ -14,6 +14,7 @@
     "lint": "next lint",
     "verify": "node verificar-repositorio.mjs",
     "test:login": "node scripts/teste-login.mjs",
+    "test:media": "node scripts/teste-media.mjs",
     "test:persistencia": "node --experimental-sqlite --import tsx scripts/teste-persistencia.mjs",
     "db:seed": "node --experimental-sqlite --import tsx scripts/seed.ts",
     "db:reset": "node --experimental-sqlite --import tsx scripts/reset-db.ts",

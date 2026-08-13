@@ -9,7 +9,6 @@ interface PreviewItem {
   matricula: string;
   nome: string;
   pelotao_nome: string;
-  data_ingresso: string;
   login: string | null;
   acao: 'INCLUIR' | 'ATUALIZAR' | 'REJEITAR';
   motivo?: string;
@@ -109,7 +108,6 @@ export default function ImportacaoDiscentesPage() {
             <code className="bg-gray-100 px-1 rounded">pelotao</code>.
             Opcionais: <code className="bg-gray-100 px-1 rounded">login</code> (padrão: matrícula),{' '}
             <code className="bg-gray-100 px-1 rounded">senha</code> (padrão: matrícula),{' '}
-            <code className="bg-gray-100 px-1 rounded">data_ingresso</code> (padrão: 2026-01-01),{' '}
             <code className="bg-gray-100 px-1 rounded">criar_login</code>.
           </p>
 
@@ -159,7 +157,6 @@ export default function ImportacaoDiscentesPage() {
                     <th>Matrícula</th>
                     <th>Nome</th>
                     <th>Pelotão</th>
-                    <th>Data Ingresso</th>
                     <th>Login</th>
                     <th>Ação</th>
                     <th>Motivo</th>
@@ -176,7 +173,6 @@ export default function ImportacaoDiscentesPage() {
                       <td>{p.matricula}</td>
                       <td>{p.nome}</td>
                       <td>{p.pelotao_nome}</td>
-                      <td>{p.data_ingresso}</td>
                       <td>{p.login || '—'}</td>
                       <td>{acaoBadge(p.acao)}</td>
                       <td className="text-xs">{p.motivo || '—'}</td>

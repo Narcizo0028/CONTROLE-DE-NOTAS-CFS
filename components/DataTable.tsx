@@ -17,6 +17,9 @@ interface DataTableProps<T extends object> {
   pageSize?: number;
   onExport?: () => void;
   emptyMessage?: string;
+  selectedIds?: string[];
+  onSelectionChange?: (ids: string[]) => void;
+  getRowId?: (item: T) => string;
 }
 
 function cellValue(item: object, key: string): unknown {
@@ -30,6 +33,9 @@ export default function DataTable<T extends object>({
   pageSize = 10,
   onExport,
   emptyMessage = 'Nenhum registro encontrado',
+  selectedIds = [],
+  onSelectionChange,
+  getRowId,
 }: DataTableProps<T>) {
   const [search, setSearch] = useState('');
   const [sortKey, setSortKey] = useState<string | null>(null);
@@ -59,6 +65,19 @@ export default function DataTable<T extends object>({
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
+  const selectable = Boolean(onSelectionChange && getRowId);
+  const pageIds = selectable ? paginated.map((item) => getRowId!(item)) : [];
+  const allPageSelected = pageIds.length > 0 && pageIds.every((id) => selectedIds.includes(id));
+
+  const toggleRow = (id: string) => {
+    if (!onSelectionChange) return;
+    onSelectionChange(selectedIds.includes(id) ? selectedIds.filter((selectedId) => selectedId !== id) : [...selectedIds, id]);
+  };
+
+  const togglePage = () => {
+    if (!onSelectionChange) return;
+    onSelectionChange(allPageSelected ? selectedIds.filter((id) => !pageIds.includes(id)) : Array.from(new Set([...selectedIds, ...pageIds])));
+  };
 
   const handleSort = (key: string) => {
     if (sortKey === key) {
@@ -93,6 +112,7 @@ export default function DataTable<T extends object>({
         <table className="data-table">
           <thead>
             <tr>
+              {selectable && <th className="w-10"><input type="checkbox" aria-label="Selecionar todos desta página" checked={allPageSelected} onChange={togglePage} /></th>}
               {columns.map((col) => (
                 <th key={col.key}>
                   {col.sortable !== false ? (
@@ -110,10 +130,11 @@ export default function DataTable<T extends object>({
           </thead>
           <tbody>
             {paginated.length === 0 ? (
-              <tr><td colSpan={columns.length} className="text-center py-8 text-gray-500">{emptyMessage}</td></tr>
+              <tr><td colSpan={columns.length + (selectable ? 1 : 0)} className="text-center py-8 text-gray-500">{emptyMessage}</td></tr>
             ) : (
               paginated.map((item, idx) => (
                 <tr key={idx}>
+                  {selectable && <td><input type="checkbox" aria-label="Selecionar registro" checked={selectedIds.includes(getRowId!(item))} onChange={() => toggleRow(getRowId!(item))} /></td>}
                   {columns.map((col) => (
                     <td key={col.key}>
                       {col.render ? col.render(item) : String(cellValue(item, col.key) ?? '—')}

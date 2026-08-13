@@ -10,7 +10,7 @@ import { useAuth } from '@/components/AuthProvider';
 
 interface Discente {
   id: string; nome: string; matricula: string; pelotao_nome: string;
-  data_ingresso: string; user_login: string | null;
+  user_login: string | null;
 }
 
 export default function DiscentesPage() {
@@ -20,14 +20,16 @@ export default function DiscentesPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Discente | null>(null);
   const [form, setForm] = useState({
-    nome: '', matricula: '', pelotao_id: '', data_ingresso: '',
+    nome: '', matricula: '', pelotao_id: '',
     criar_login: true, login: '', senha: 'discente123',
   });
   const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const load = async () => {
     const [dRes, pRes] = await Promise.all([fetch('/api/discentes'), fetch('/api/pelotoes')]);
-    if (dRes.ok) setDiscentes(await dRes.json());
+    if (dRes.ok) { setDiscentes(await dRes.json()); setSelectedIds([]); }
     if (pRes.ok) {
       const ps = await pRes.json();
       setPelotoes(ps);
@@ -42,7 +44,7 @@ export default function DiscentesPage() {
   const openCreate = () => {
     setEditing(null);
     setForm({
-      nome: '', matricula: '', pelotao_id: user?.pelotao_id || '', data_ingresso: new Date().toISOString().split('T')[0],
+      nome: '', matricula: '', pelotao_id: user?.pelotao_id || '',
       criar_login: true, login: '', senha: 'discente123',
     });
     setError('');
@@ -51,21 +53,23 @@ export default function DiscentesPage() {
 
   const openEdit = (d: Discente) => {
     setEditing(d);
-    setForm({ ...form, nome: d.nome, matricula: d.matricula, data_ingresso: d.data_ingresso });
+    setForm({ ...form, nome: d.nome, matricula: d.matricula });
     setError('');
     setModalOpen(true);
   };
 
   const handleSave = async () => {
     setError('');
+    setSaving(true);
+    try {
     if (editing) {
       const res = await fetch(`/api/discentes/${editing.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nome: form.nome, matricula: form.matricula, data_ingresso: form.data_ingresso }),
+        body: JSON.stringify({ nome: form.nome, matricula: form.matricula }),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.error); return; }
+      if (!res.ok) { setError(data.error || 'Não foi possível atualizar o discente.'); return; }
     } else {
       const res = await fetch('/api/discentes', {
         method: 'POST',
@@ -73,10 +77,15 @@ export default function DiscentesPage() {
         body: JSON.stringify(form),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.error); return; }
+      if (!res.ok) { setError(data.error || 'Não foi possível cadastrar o discente.'); return; }
     }
     setModalOpen(false);
     load();
+    } catch {
+      setError('Falha de conexão. Tente novamente.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -84,6 +93,13 @@ export default function DiscentesPage() {
     const res = await fetch(`/api/discentes/${id}`, { method: 'DELETE' });
     if (res.ok) load();
     else { const d = await res.json(); alert(d.error); }
+  };
+
+  const handleBulkDelete = async () => {
+    if (!confirm(`Confirma a exclusão de ${selectedIds.length} discente(s) selecionado(s) e todas as suas notas?`)) return;
+    const res = await fetch('/api/discentes/excluir-em-lote', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids: selectedIds }) });
+    if (res.ok) load();
+    else { const data = await res.json(); alert(data.error || 'Não foi possível excluir os discentes selecionados.'); }
   };
 
   return (
@@ -95,6 +111,7 @@ export default function DiscentesPage() {
               <Upload size={16} /> Importar JSON
             </Link>
           )}
+          {selectedIds.length > 0 && <button onClick={handleBulkDelete} className="btn-secondary text-red-600"><Trash2 size={16} /> Excluir selecionados ({selectedIds.length})</button>}
           <button onClick={openCreate} className="btn-primary"><Plus size={16} /> Novo Discente</button>
         </div>
 
@@ -105,7 +122,6 @@ export default function DiscentesPage() {
             { key: 'matricula', label: 'Matrícula' },
             { key: 'nome', label: 'Nome' },
             { key: 'pelotao_nome', label: 'Pelotão' },
-            { key: 'data_ingresso', label: 'Data Ingresso' },
             { key: 'user_login', label: 'Login' },
             {
               key: 'actions', label: 'Ações', sortable: false,
@@ -117,6 +133,9 @@ export default function DiscentesPage() {
               ),
             },
           ]}
+          selectedIds={selectedIds}
+          onSelectionChange={setSelectedIds}
+          getRowId={(d) => d.id}
         />
       </div>
 
@@ -140,10 +159,6 @@ export default function DiscentesPage() {
                 </select>
               </div>
             )}
-            <div>
-              <label className="label">Data de Ingresso</label>
-              <input type="date" className="input" value={form.data_ingresso} onChange={(e) => setForm({ ...form, data_ingresso: e.target.value })} />
-            </div>
           </div>
           {!editing && (
             <div className="border-t pt-4">
@@ -168,7 +183,7 @@ export default function DiscentesPage() {
           {error && <p className="text-red-600 text-sm">{error}</p>}
           <div className="flex gap-3 justify-end">
             <button onClick={() => setModalOpen(false)} className="btn-secondary">Cancelar</button>
-            <button onClick={handleSave} className="btn-primary">Salvar</button>
+            <button onClick={handleSave} disabled={saving} className="btn-primary">{saving ? 'Salvando...' : 'Salvar'}</button>
           </div>
         </div>
       </Modal>

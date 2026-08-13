@@ -80,19 +80,20 @@ export function getDataDir(): string {
 }
 
 export type DbInstance = DatabaseSync & {
-  transaction: (fn: () => void) => () => void;
+  transaction: <T>(fn: () => T) => () => T;
 };
 
 let db: DbInstance | null = null;
 
 function wrapDatabase(database: DatabaseSync): DbInstance {
   const wrapped = database as DbInstance;
-  wrapped.transaction = (fn: () => void) => {
+  wrapped.transaction = <T>(fn: () => T) => {
     return () => {
       database.exec('BEGIN');
       try {
-        fn();
+        const result = fn();
         database.exec('COMMIT');
+        return result;
       } catch (error) {
         database.exec('ROLLBACK');
         throw error;
@@ -163,6 +164,7 @@ export function getDb(): DbInstance {
     }
     const database = new DatabaseSync(file);
     database.exec('PRAGMA journal_mode = WAL');
+    database.exec('PRAGMA synchronous = NORMAL');
     database.exec('PRAGMA foreign_keys = ON');
     database.exec('PRAGMA busy_timeout = 10000');
     db = wrapDatabase(database);
@@ -298,6 +300,7 @@ function initializeSchema(database: DbInstance) {
     CREATE INDEX IF NOT EXISTS idx_discentes_pelotao ON discentes(pelotao_id);
     CREATE INDEX IF NOT EXISTS idx_audit_created ON audit_log(created_at);
     CREATE INDEX IF NOT EXISTS idx_audit_user ON audit_log(user_id);
+    CREATE INDEX IF NOT EXISTS idx_login_attempts_login_created ON login_attempts(login, success, created_at);
     CREATE INDEX IF NOT EXISTS idx_disciplinas_ordem ON disciplinas(ordem);
   `);
 }

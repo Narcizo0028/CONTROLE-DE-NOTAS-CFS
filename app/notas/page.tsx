@@ -33,16 +33,20 @@ export default function NotasPage() {
   const [editDisciplina, setEditDisciplina] = useState<Disciplina | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [saving, setSaving] = useState(false);
 
   const load = async () => {
-    const [dRes, discRes, nRes] = await Promise.all([
-      fetch('/api/disciplinas'),
-      fetch('/api/discentes'),
-      fetch('/api/notas'),
-    ]);
-    if (dRes.ok) setDisciplinas(await dRes.json());
-    if (discRes.ok) setDiscentes(await discRes.json());
-    if (nRes.ok) setNotas(await nRes.json());
+    const response = await fetch('/api/notas/inicial');
+    if (!response.ok) return;
+    const data = await response.json();
+    setDisciplinas(data.disciplinas);
+    setDiscentes(data.discentes);
+    setNotas(data.notas);
+  };
+
+  const refreshNotas = async () => {
+    const response = await fetch('/api/notas');
+    if (response.ok) setNotas(await response.json());
   };
 
   useEffect(() => { load(); }, []);
@@ -51,16 +55,18 @@ export default function NotasPage() {
     setError(''); setSuccess('');
     if (!selDiscente || !selDisciplina) { setError('Selecione discente e disciplina'); return; }
 
+    setSaving(true);
     const res = await fetch('/api/notas', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ discente_id: selDiscente, disciplina_id: selDisciplina.id, ...valores }),
     });
     const data = await res.json();
-    if (!res.ok) { setError(data.error); return; }
+    if (!res.ok) { setError(data.error); setSaving(false); return; }
     setSuccess(data.updated ? `Nota atualizada: ${data.resumo}` : `Nota lançada: ${data.resumo}`);
     setValores({});
-    load();
+    setSaving(false);
+    refreshNotas();
   };
 
   const handleColetivo = async () => {
@@ -86,7 +92,7 @@ export default function NotasPage() {
     if (!res.ok) { setError(data.error); return; }
     setSuccess(`${data.created} criadas, ${data.updated} atualizadas${data.errors?.length ? `. Erros: ${data.errors.join('; ')}` : ''}`);
     setColetivoNotas({});
-    load();
+    refreshNotas();
   };
 
   const openEdit = (n: NotaRow) => {
@@ -106,14 +112,14 @@ export default function NotasPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(editValores),
     });
-    if (res.ok) { setEditModal(null); load(); }
+    if (res.ok) { setEditModal(null); refreshNotas(); }
     else { const d = await res.json(); alert(d.error); }
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Confirma a exclusão desta nota?')) return;
     await fetch(`/api/notas/${id}`, { method: 'DELETE' });
-    load();
+    refreshNotas();
   };
 
   const resumoNota = (n: NotaRow) => {
@@ -163,7 +169,7 @@ export default function NotasPage() {
               </select>
             </div>
             <NotaForm disciplina={selDisciplina} valores={valores} onChange={setValores} />
-            <button onClick={handleIndividual} className="btn-primary" disabled={!selDiscente || !selDisciplina}>
+            <button onClick={handleIndividual} className="btn-primary" disabled={saving || !selDiscente || !selDisciplina}>
               Lançar Nota
             </button>
           </div>

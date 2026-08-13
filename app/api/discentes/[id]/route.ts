@@ -42,7 +42,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
   const db = getDb();
   const existing = db.prepare('SELECT * FROM discentes WHERE id = ?').get(params.id) as {
-    id: string; pelotao_id: string; nome: string; matricula: string; data_ingresso: string;
+    id: string; pelotao_id: string; nome: string; matricula: string;
   } | undefined;
 
   if (!existing) return apiError('Discente não encontrado', 404);
@@ -50,11 +50,10 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     return apiError('Acesso negado', 403);
   }
 
-  const { nome, matricula, data_ingresso } = await request.json();
+  const { nome, matricula } = await request.json();
   const updates: Record<string, string> = {};
   if (nome) updates.nome = nome;
   if (matricula) updates.matricula = matricula;
-  if (data_ingresso) updates.data_ingresso = data_ingresso;
 
   if (Object.keys(updates).length === 0) return apiError('Nenhum campo para atualizar');
 

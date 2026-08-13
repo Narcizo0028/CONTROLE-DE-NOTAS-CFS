@@ -1,6 +1,6 @@
 import { getDb } from './db';
 import type { RankingEntry } from './types';
-import { calcMedia } from './utils';
+import { calcMediaRaw, truncarMedia } from './utils';
 
 interface DiscenteStats {
   discente_id: string;
@@ -13,6 +13,7 @@ interface DiscenteStats {
   pontos_obtidos: number;
   percentual: number;
   media: number;
+  media_ordenacao: number;
 }
 
 function getDiscenteStats(pelotaoIds?: string[]): DiscenteStats[] {
@@ -49,10 +50,12 @@ function getDiscenteStats(pelotaoIds?: string[]): DiscenteStats[] {
   const rows = db.prepare(query).all(...params) as unknown as DiscenteStats[];
 
   return rows.map((row) => {
-    const media = calcMedia(row.pontos_obtidos, row.pontos_distribuidos);
+    const mediaOrdenacao = calcMediaRaw(row.pontos_obtidos, row.pontos_distribuidos);
+    const media = truncarMedia(mediaOrdenacao);
     return {
       ...row,
       media,
+      media_ordenacao: mediaOrdenacao,
       percentual: media,
     };
   });
@@ -60,7 +63,7 @@ function getDiscenteStats(pelotaoIds?: string[]): DiscenteStats[] {
 
 function sortRanking(stats: DiscenteStats[]): DiscenteStats[] {
   return [...stats].sort((a, b) => {
-    if (b.media !== a.media) return b.media - a.media;
+    if (b.media_ordenacao !== a.media_ordenacao) return b.media_ordenacao - a.media_ordenacao;
     if (b.pontos_obtidos !== a.pontos_obtidos) return b.pontos_obtidos - a.pontos_obtidos;
     if (b.pontos_distribuidos !== a.pontos_distribuidos) return b.pontos_distribuidos - a.pontos_distribuidos;
     return new Date(a.data_ingresso).getTime() - new Date(b.data_ingresso).getTime();
@@ -97,7 +100,7 @@ export function getPelotaoRankingStats(pelotaoId: string) {
     ranking: ranking.slice(0, 10),
     total: ranking.length,
     mediaPercentual: ranking.length > 0
-      ? ranking.reduce((sum, r) => sum + r.percentual, 0) / ranking.length
+      ? truncarMedia(ranking.reduce((sum, r) => sum + r.media, 0) / ranking.length)
       : 0,
   };
 }
@@ -110,7 +113,7 @@ export function getPelotaoComparison(pelotaoIds: string[]) {
     const totalPontosDistribuidos = ranking.reduce((s, r) => s + r.pontos_distribuidos, 0);
     const totalPontosObtidos = ranking.reduce((s, r) => s + r.pontos_obtidos, 0);
     const mediaPercentual = ranking.length > 0
-      ? ranking.reduce((s, r) => s + r.percentual, 0) / ranking.length
+      ? truncarMedia(ranking.reduce((s, r) => s + r.media, 0) / ranking.length)
       : 0;
 
     return {

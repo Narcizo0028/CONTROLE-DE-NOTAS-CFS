@@ -13,14 +13,10 @@ export async function ensureRuntimeReady() {
       const { getDb } = await import('./db');
       getDb();
 
-      // Falha ao semear não deve impedir o login de usuários já cadastrados.
-      try {
-        const { ensureDemoAccess } = await import('./ensure-demo');
-        await ensureDemoAccess();
-      } catch (error) {
-        console.error('[runtime] Falha ao garantir contas demo:', error);
-      }
+      const { ensureDemoAccess } = await import('./ensure-demo');
+      await ensureDemoAccess();
 
+      // Falha ao semear não deve impedir o login de usuários já cadastrados.
       bootstrapped = true;
     } finally {
       // Libera para nova tentativa caso a abertura do banco tenha falhado.

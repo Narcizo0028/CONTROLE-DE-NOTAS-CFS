@@ -7,7 +7,6 @@ export interface DiscenteImportItem {
   pelotao_nome?: string;
   pelotao_numero?: number | string;
   pelotao_id?: string;
-  data_ingresso?: string;
   criar_login?: boolean;
   login?: string;
   senha?: string;
@@ -17,7 +16,6 @@ export interface DiscenteImportPreviewItem {
   matricula: string;
   nome: string;
   pelotao_nome: string;
-  data_ingresso: string;
   login: string | null;
   acao: 'INCLUIR' | 'ATUALIZAR' | 'REJEITAR';
   motivo?: string;
@@ -29,6 +27,7 @@ export interface DiscenteImportProcessItem {
   nome: string;
   matricula: string;
   pelotao_id: string;
+  /** Campo interno: a importação não recebe nem exibe esta informação. */
   data_ingresso: string;
   criar_login: boolean;
   login: string;
@@ -47,7 +46,6 @@ function normalizeItem(raw: Record<string, unknown>): DiscenteImportItem {
     pelotao_nome: raw.pelotao_nome != null ? String(raw.pelotao_nome).trim() : undefined,
     pelotao_numero: raw.pelotao_numero as number | string | undefined,
     pelotao_id: raw.pelotao_id != null ? String(raw.pelotao_id).trim() : undefined,
-    data_ingresso: raw.data_ingresso != null ? String(raw.data_ingresso).trim() : undefined,
     criar_login: raw.criar_login === undefined ? true : Boolean(raw.criar_login),
     login: raw.login != null ? String(raw.login).trim() : undefined,
     senha: raw.senha != null ? String(raw.senha) : undefined,
@@ -103,10 +101,6 @@ function resolvePelotao(
   return null;
 }
 
-function isValidDate(value: string): boolean {
-  return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value));
-}
-
 function defaultDataIngresso(): string {
   return '2026-01-01';
 }
@@ -127,7 +121,6 @@ export function buildDiscentesImportPreview(
         matricula,
         nome: '?',
         pelotao_nome: '?',
-        data_ingresso: item.data_ingresso || '?',
         login: null,
         acao: 'REJEITAR',
         motivo: 'Campo "nome" é obrigatório',
@@ -140,7 +133,6 @@ export function buildDiscentesImportPreview(
         matricula: '?',
         nome: item.nome,
         pelotao_nome: '?',
-        data_ingresso: item.data_ingresso || '?',
         login: null,
         acao: 'REJEITAR',
         motivo: 'Campo "matricula" é obrigatório',
@@ -153,7 +145,6 @@ export function buildDiscentesImportPreview(
         matricula: item.matricula,
         nome: item.nome,
         pelotao_nome: '?',
-        data_ingresso: item.data_ingresso || '?',
         login: null,
         acao: 'REJEITAR',
         motivo: 'Matrícula duplicada no arquivo',
@@ -162,26 +153,13 @@ export function buildDiscentesImportPreview(
     }
     matriculasNoArquivo.add(item.matricula);
 
-    const dataIngresso = item.data_ingresso?.trim() || defaultDataIngresso();
-    if (item.data_ingresso && !isValidDate(item.data_ingresso)) {
-      preview.push({
-        matricula: item.matricula,
-        nome: item.nome,
-        pelotao_nome: '?',
-        data_ingresso: item.data_ingresso,
-        login: null,
-        acao: 'REJEITAR',
-        motivo: 'Campo "data_ingresso" inválido (use AAAA-MM-DD)',
-      });
-      continue;
-    }
+    const dataIngresso = defaultDataIngresso();
 
     if (!item.pelotao && !item.pelotao_nome && item.pelotao_numero == null && !item.pelotao_id) {
       preview.push({
         matricula: item.matricula,
         nome: item.nome,
         pelotao_nome: '?',
-        data_ingresso: dataIngresso,
         login: null,
         acao: 'REJEITAR',
         motivo: 'Campo "pelotao" é obrigatório',
@@ -195,7 +173,6 @@ export function buildDiscentesImportPreview(
         matricula: item.matricula,
         nome: item.nome,
         pelotao_nome: '?',
-        data_ingresso: dataIngresso,
         login: null,
         acao: 'REJEITAR',
         motivo: 'Pelotão não encontrado',
@@ -212,7 +189,6 @@ export function buildDiscentesImportPreview(
         matricula: item.matricula,
         nome: item.nome,
         pelotao_nome: pelotao.nome,
-        data_ingresso: dataIngresso,
         login,
         acao: 'REJEITAR',
         motivo: 'Login inválido (mínimo 3 caracteres)',
@@ -225,7 +201,6 @@ export function buildDiscentesImportPreview(
         matricula: item.matricula,
         nome: item.nome,
         pelotao_nome: pelotao.nome,
-        data_ingresso: dataIngresso,
         login,
         acao: 'REJEITAR',
         motivo: 'Senha inválida (mínimo 4 caracteres)',
@@ -246,7 +221,6 @@ export function buildDiscentesImportPreview(
           matricula: item.matricula,
           nome: item.nome,
           pelotao_nome: pelotao.nome,
-          data_ingresso: dataIngresso,
           login,
           acao: 'REJEITAR',
           motivo: 'Login já utilizado por outro usuário',
@@ -260,7 +234,6 @@ export function buildDiscentesImportPreview(
       matricula: item.matricula,
       nome: item.nome,
       pelotao_nome: pelotao.nome,
-      data_ingresso: dataIngresso,
       login: criarLogin ? login : null,
       acao,
       motivo: existing ? 'Discente existente será atualizado' : undefined,
