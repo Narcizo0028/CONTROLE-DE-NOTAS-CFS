@@ -19,6 +19,23 @@ export async function GET(request: NextRequest) {
   const db = getDb();
 
   switch (tipo) {
+    case 'notas_lancadas': {
+      if (isDiscente(auth.user)) return apiError('Acesso negado', 403);
+      const pid = isControladorGeral(auth.user) ? pelotaoId : auth.user.pelotao_id;
+      const notas = db.prepare(`
+        SELECT n.*, d.nome as discente_nome, d.matricula, p.nome as pelotao_nome,
+               disc.nome as disciplina_nome, u.nome as lancado_por_nome, n.tipo_lancamento
+        FROM notas n
+        JOIN discentes d ON d.id = n.discente_id
+        JOIN pelotoes p ON p.id = d.pelotao_id
+        JOIN disciplinas disc ON disc.id = n.disciplina_id
+        JOIN users u ON u.id = n.lancado_por_id
+        ${pid ? 'WHERE d.pelotao_id = ?' : ''}
+        ORDER BY n.created_at DESC
+      `).all(...(pid ? [pid] : []));
+      return apiSuccess(notas);
+    }
+
     case 'notas_por_pelotao': {
       if (!isControladorGeral(auth.user) && auth.user.pelotao_id !== pelotaoId) {
         return apiError('Acesso negado', 403);
@@ -161,7 +178,7 @@ export async function GET(request: NextRequest) {
       return apiError(
         `Tipo de relatório inválido${tipo ? `: "${tipo}"` : ' (parâmetro "tipo" não informado)'}. `
         + 'Válidos: notas_por_pelotao, notas_por_discente, notas_por_disciplina, pontos_por_pelotao, '
-        + 'divergencias, atualizacao_pelotoes, todos_discentes, pelotao_resumo, auditoria_notas.'
+        + 'divergencias, atualizacao_pelotoes, todos_discentes, pelotao_resumo, auditoria_notas, notas_lancadas.'
       );
   }
 }

@@ -18,9 +18,10 @@ export async function POST(request: NextRequest) {
   if (auth instanceof Response) return auth;
 
   const body = await request.json();
-  const { data, confirm } = body;
+  const { data, confirm, pelotao_id } = body;
 
   if (!data) return apiError('Dados de importação inválidos');
+  if (!pelotao_id || typeof pelotao_id !== 'string') return apiError('Selecione o pelotão para a importação');
 
   let items: DiscenteImportItem[];
   try {
@@ -32,6 +33,9 @@ export async function POST(request: NextRequest) {
   if (items.length === 0) return apiError('Nenhum discente informado no arquivo');
 
   const db = getDb();
+  const pelotao = db.prepare('SELECT id FROM pelotoes WHERE id = ?').get(pelotao_id);
+  if (!pelotao) return apiError('Pelotão não encontrado');
+  items = items.map((item) => ({ ...item, pelotao_id }));
   const { preview, toProcess } = buildDiscentesImportPreview(db, items);
 
   if (!confirm) {
@@ -51,7 +55,7 @@ export async function POST(request: NextRequest) {
   const hashedItems = await Promise.all(
     toProcess.map(async (item) => ({
       ...item,
-      passwordHash: item.criar_login ? await hashPassword(item.senha) : null,
+      passwordHash: await hashPassword(item.senha),
     }))
   );
 
@@ -61,18 +65,16 @@ export async function POST(request: NextRequest) {
         const discenteId = uuidv4();
         let userId: string | null = null;
 
-        if (item.criar_login && item.passwordHash) {
-          userId = uuidv4();
-          db.prepare(`
-            INSERT INTO users (id, login, password_hash, nome, role, pelotao_id, discente_id)
-            VALUES (?, ?, ?, ?, 'DISCENTE', ?, ?)
-          `).run(userId, item.login, item.passwordHash, item.nome, item.pelotao_id, discenteId);
-        }
+        userId = uuidv4();
+        db.prepare(`
+          INSERT INTO users (id, login, password_hash, nome, role, pelotao_id, discente_id)
+          VALUES (?, ?, ?, ?, 'DISCENTE', ?, ?)
+        `).run(userId, item.matricula, item.passwordHash, item.nome, item.pelotao_id, discenteId);
 
         db.prepare(`
-          INSERT INTO discentes (id, nome, matricula, pelotao_id, data_ingresso, user_id)
+          INSERT INTO discentes (id, nome, matricula, pelotao_id, posto_graduacao, user_id)
           VALUES (?, ?, ?, ?, ?, ?)
-        `).run(discenteId, item.nome, item.matricula, item.pelotao_id, item.data_ingresso, userId);
+        `).run(discenteId, item.nome, item.matricula, item.pelotao_id, item.posto_graduacao, userId);
 
         incluidos++;
         continue;
@@ -85,23 +87,23 @@ export async function POST(request: NextRequest) {
 
       db.prepare(`
         UPDATE discentes
-        SET nome = ?, pelotao_id = ?, data_ingresso = ?, updated_at = datetime('now')
+        SET nome = ?, pelotao_id = ?, posto_graduacao = ?, updated_at = datetime('now')
         WHERE id = ?
-      `).run(item.nome, item.pelotao_id, item.data_ingresso, existing.id);
+      `).run(item.nome, item.pelotao_id, item.posto_graduacao, existing.id);
 
-      if (item.criar_login && !existing.user_id && item.passwordHash) {
+      if (!existing.user_id && item.passwordHash) {
         const userId = uuidv4();
         db.prepare(`
           INSERT INTO users (id, login, password_hash, nome, role, pelotao_id, discente_id)
           VALUES (?, ?, ?, ?, 'DISCENTE', ?, ?)
-        `).run(userId, item.login, item.passwordHash, item.nome, item.pelotao_id, existing.id);
+        `).run(userId, item.matricula, item.passwordHash, item.nome, item.pelotao_id, existing.id);
         db.prepare('UPDATE discentes SET user_id = ? WHERE id = ?').run(userId, existing.id);
       } else if (existing.user_id) {
         db.prepare(`
           UPDATE users
-          SET nome = ?, pelotao_id = ?, updated_at = datetime('now')
+          SET nome = ?, pelotao_id = ?, password_hash = ?, updated_at = datetime('now')
           WHERE id = ?
-        `).run(item.nome, item.pelotao_id, existing.user_id);
+        `).run(item.nome, item.pelotao_id, item.passwordHash, existing.user_id);
       }
 
       atualizados++;

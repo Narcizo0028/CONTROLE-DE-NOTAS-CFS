@@ -109,6 +109,13 @@ function columnExists(database: DatabaseSync, table: string, column: string): bo
 }
 
 function migrateSchema(database: DatabaseSync) {
+  if (columnExists(database, 'discentes', 'data_ingresso')) {
+    database.exec('ALTER TABLE discentes DROP COLUMN data_ingresso');
+  }
+  if (!columnExists(database, 'discentes', 'posto_graduacao')) {
+    database.exec("ALTER TABLE discentes ADD COLUMN posto_graduacao TEXT NOT NULL DEFAULT 'AL SGT PM'");
+  }
+
   const disciplinaCols: [string, string][] = [
     ['carga_horaria', 'INTEGER NOT NULL DEFAULT 0'],
     ['tipo_avaliacao', "TEXT NOT NULL DEFAULT 'NUMERICA'"],
@@ -204,7 +211,7 @@ function initializeSchema(database: DbInstance) {
       nome TEXT NOT NULL,
       matricula TEXT NOT NULL UNIQUE,
       pelotao_id TEXT NOT NULL REFERENCES pelotoes(id),
-      data_ingresso TEXT NOT NULL,
+      posto_graduacao TEXT NOT NULL DEFAULT 'AL SGT PM',
       user_id TEXT REFERENCES users(id),
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))

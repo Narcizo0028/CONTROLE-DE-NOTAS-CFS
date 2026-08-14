@@ -1,0 +1,16 @@
+{
+  "discentes": [
+    {
+      "matricula": "PREENCHA_A_MATRICULA",
+      "nome": "PREENCHA_O_NOME_COMPLETO",
+      "posto_graduacao": "AL SGT PM",
+      "senha": "PREENCHA_A_SENHA"
+    },
+    {
+      "matricula": "PREENCHA_A_MATRICULA",
+      "nome": "PREENCHA_O_NOME_COMPLETO",
+      "posto_graduacao": "AL SGT PM",
+      "senha": "PREENCHA_A_SENHA"
+    }
+  ]
+}

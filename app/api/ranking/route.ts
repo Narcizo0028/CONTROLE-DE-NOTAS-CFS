@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { calculateRanking, getPelotaoComparison } from '@/lib/ranking';
+import { calculateRanking } from '@/lib/ranking';
 import { requireAuth, apiError, apiSuccess } from '@/lib/api-helpers';
 import { isControladorGeral, isControladorPelotao, isDiscente, canAccessPelotao } from '@/lib/permissions';
 import { applyRankingPrivacy } from '@/lib/utils';
@@ -14,13 +14,13 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const pelotaoId = searchParams.get('pelotao_id');
   const pelotaoIds = searchParams.get('pelotao_ids');
-  const compare = searchParams.get('compare') === 'true';
-
-  if (compare && pelotaoIds) {
+  if (pelotaoIds) {
     if (!isControladorGeral(auth.user)) {
       return apiError('Acesso negado', 403);
     }
-    return apiSuccess(getPelotaoComparison(pelotaoIds.split(',')));
+    const ids = Array.from(new Set(pelotaoIds.split(',').filter(Boolean)));
+    if (ids.length !== 2) return apiError('Selecione exatamente dois pelotões');
+    return apiSuccess(calculateRanking(ids));
   }
 
   let filterPelotaoIds: string[] | undefined;

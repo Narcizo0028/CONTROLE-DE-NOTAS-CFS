@@ -18,10 +18,9 @@ export async function GET(request: NextRequest) {
   const pelotaoId = searchParams.get('pelotao_id');
 
   let query = `
-    SELECT d.*, p.nome as pelotao_nome, p.numero as pelotao_numero, u.login as user_login
+    SELECT d.*, p.nome as pelotao_nome, p.numero as pelotao_numero
     FROM discentes d
     JOIN pelotoes p ON p.id = d.pelotao_id
-    LEFT JOIN users u ON u.id = d.user_id
   `;
   const params: string[] = [];
 
@@ -90,9 +89,9 @@ export async function POST(request: NextRequest) {
       `).run(userId, login, passwordHash, nome, pelotao_id, id);
     }
     db.prepare(`
-      INSERT INTO discentes (id, nome, matricula, pelotao_id, data_ingresso, user_id)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).run(id, nome, matricula, pelotao_id, new Date().toISOString().slice(0, 10), userId);
+      INSERT INTO discentes (id, nome, matricula, pelotao_id, user_id)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(id, nome, matricula, pelotao_id, userId);
 
     logAudit({
       user: auth.user,

@@ -11,8 +11,8 @@ const reportTypes = [
   { value: 'pelotao_resumo', label: 'Resumo do Pelotão', roles: ['CONTROLADOR_GERAL', 'CONTROLADOR_PELOTÃO'] },
   { value: 'notas_por_pelotao', label: 'Notas por Pelotão', roles: ['CONTROLADOR_GERAL', 'CONTROLADOR_PELOTÃO'] },
   { value: 'notas_por_disciplina', label: 'Notas por Disciplina', roles: ['CONTROLADOR_GERAL'] },
+  { value: 'notas_lancadas', label: 'Notas Lançadas', roles: ['CONTROLADOR_GERAL', 'CONTROLADOR_PELOTÃO'] },
   { value: 'todos_discentes', label: 'Todos os Discentes', roles: ['CONTROLADOR_GERAL'] },
-  { value: 'pontos_por_pelotao', label: 'Pontos por Pelotão', roles: ['CONTROLADOR_GERAL'] },
   { value: 'divergencias', label: 'Divergências', roles: ['CONTROLADOR_GERAL'] },
   { value: 'atualizacao_pelotoes', label: 'Atualização dos Pelotões', roles: ['CONTROLADOR_GERAL'] },
   { value: 'auditoria_notas', label: 'Histórico de Notas', roles: ['CONTROLADOR_GERAL', 'CONTROLADOR_PELOTÃO'] },
@@ -47,6 +47,27 @@ export default function RelatoriosPage() {
 
   const renderData = () => {
     if (!data) return null;
+
+    if (tipo === 'notas_lancadas' && Array.isArray(data)) {
+      const notas = data as Array<Record<string, unknown>>;
+      return (
+        <DataTable
+          data={notas}
+          searchKeys={['discente_nome', 'disciplina_nome', 'pelotao_nome']}
+          columns={[
+            { key: 'discente_nome', label: 'Discente' },
+            { key: 'pelotao_nome', label: 'Pelotão' },
+            { key: 'disciplina_nome', label: 'Disciplina' },
+            ...(user?.role === 'CONTROLADOR_GERAL' ? [{
+              key: 'resultado', label: 'Resultado',
+              render: (r: Record<string, unknown>) => String(r.situacao ?? r.nota_final ?? '—'),
+            }] : []),
+            { key: 'tipo_lancamento', label: 'Lançado por', render: (r) => getTipoLancamentoLabel(r.tipo_lancamento as string) },
+            { key: 'created_at', label: 'Data', render: (r) => formatDateTime(r.created_at as string) },
+          ]}
+        />
+      );
+    }
 
     if (tipo === 'pelotao_resumo' && data && typeof data === 'object' && 'ranking' in (data as object)) {
       const d = data as { ranking: Array<Record<string, unknown>>; notas: Array<Record<string, unknown>> };
@@ -161,7 +182,7 @@ export default function RelatoriosPage() {
                 {availableTypes.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
               </select>
             </div>
-            {['notas_por_pelotao', 'pelotao_resumo'].includes(tipo) && user?.role === 'CONTROLADOR_GERAL' && (
+            {['notas_por_pelotao', 'pelotao_resumo', 'notas_lancadas'].includes(tipo) && user?.role === 'CONTROLADOR_GERAL' && (
               <div>
                 <label className="label">Pelotão</label>
                 <select className="input" value={filtroPelotao} onChange={(e) => setFiltroPelotao(e.target.value)}>

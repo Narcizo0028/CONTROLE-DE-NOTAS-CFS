@@ -19,9 +19,7 @@ export default function RankingPage() {
   const [ranking, setRanking] = useState<RankingEntry[]>([]);
   const [pelotoes, setPelotoes] = useState<Array<{ id: string; nome: string }>>([]);
   const [filtroPelotao, setFiltroPelotao] = useState('');
-  const [compareMode, setCompareMode] = useState(false);
   const [selectedPelotoes, setSelectedPelotoes] = useState<string[]>([]);
-  const [comparison, setComparison] = useState<Array<{ pelotao_nome: string; media_percentual: number; total_discentes: number }>>([]);
   const [loading, setLoading] = useState(true);
 
   const loadRanking = async (pelotaoId?: string) => {
@@ -33,10 +31,12 @@ export default function RankingPage() {
     setLoading(false);
   };
 
-  const loadComparison = async () => {
+  const loadSelectedRanking = async () => {
     if (selectedPelotoes.length < 2) return;
-    const res = await fetch(`/api/ranking?compare=true&pelotao_ids=${selectedPelotoes.join(',')}`);
-    if (res.ok) setComparison(await res.json());
+    setLoading(true);
+    const res = await fetch(`/api/ranking?pelotao_ids=${selectedPelotoes.join(',')}`);
+    if (res.ok) setRanking(await res.json());
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -82,14 +82,6 @@ export default function RankingPage() {
                   <option value="">Ranking Geral</option>
                   {pelotoes.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
                 </select>
-                {user?.role === 'CONTROLADOR_GERAL' && (
-                  <button
-                    onClick={() => setCompareMode(!compareMode)}
-                    className={`btn-secondary text-sm ${compareMode ? 'ring-2 ring-primary-500' : ''}`}
-                  >
-                    Comparar Pelotões
-                  </button>
-                )}
               </>
             )}
           </div>
@@ -99,9 +91,10 @@ export default function RankingPage() {
           </div>
         </div>
 
-        {compareMode && user?.role === 'CONTROLADOR_GERAL' && (
+        {user?.role === 'CONTROLADOR_GERAL' && (
           <div className="card space-y-3">
-            <h3 className="font-semibold">Comparar Pelotões</h3>
+            <h3 className="font-semibold">Ranking entre Pelotões</h3>
+            <p className="text-sm text-gray-600">Selecione exatamente dois pelotões para gerar um ranking único entre os discentes selecionados.</p>
             <div className="flex flex-wrap gap-2">
               {pelotoes.map((p) => (
                 <label key={p.id} className="flex items-center gap-2 text-sm">
@@ -109,6 +102,7 @@ export default function RankingPage() {
                     type="checkbox"
                     checked={selectedPelotoes.includes(p.id)}
                     onChange={(e) => {
+                      if (e.target.checked && selectedPelotoes.length === 2) return;
                       setSelectedPelotoes(
                         e.target.checked
                           ? [...selectedPelotoes, p.id]
@@ -120,25 +114,9 @@ export default function RankingPage() {
                 </label>
               ))}
             </div>
-            <button onClick={loadComparison} className="btn-primary" disabled={selectedPelotoes.length < 2}>
-              Comparar
+            <button onClick={loadSelectedRanking} className="btn-primary" disabled={selectedPelotoes.length !== 2}>
+              Gerar Ranking dos Pelotões Selecionados
             </button>
-            {comparison.length > 0 && (
-              <div className="table-container mt-4">
-                <table className="data-table">
-                  <thead><tr><th>Pelotão</th><th>Discentes</th><th>Média</th></tr></thead>
-                  <tbody>
-                    {comparison.map((c, i) => (
-                      <tr key={i}>
-                        <td>{c.pelotao_nome}</td>
-                        <td>{c.total_discentes}</td>
-                        <td className="font-semibold">{formatMedia(c.media_percentual)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
           </div>
         )}
 

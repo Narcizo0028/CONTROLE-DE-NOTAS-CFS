@@ -71,7 +71,7 @@ export interface Discente {
   nome: string;
   matricula: string;
   pelotao_id: string;
-  data_ingresso: string;
+  posto_graduacao: string;
   user_id: string | null;
   created_at: string;
   updated_at: string;
@@ -153,7 +153,7 @@ export interface RankingEntry {
   pontos_distribuidos: number;
   pontos_obtidos: number;
   percentual: number;
-  data_ingresso: string;
+  media: number;
 }
 
 export interface SessionUser {

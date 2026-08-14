@@ -8,7 +8,6 @@ interface DiscenteStats {
   pelotao_id: string;
   pelotao_nome: string;
   pelotao_numero: number;
-  data_ingresso: string;
   pontos_distribuidos: number;
   pontos_obtidos: number;
   percentual: number;
@@ -20,7 +19,7 @@ function getDiscenteStats(pelotaoIds?: string[]): DiscenteStats[] {
   const db = getDb();
   const totalDistribuidos = (db.prepare(`
     SELECT COALESCE(SUM(pontos_distribuidos), 0) as total
-    FROM disciplinas WHERE participa_ranking = 1 AND participa_media = 1
+    FROM disciplinas WHERE participa_ranking = 1
   `).get() as { total: number }).total;
 
   let query = `
@@ -30,13 +29,12 @@ function getDiscenteStats(pelotaoIds?: string[]): DiscenteStats[] {
       d.pelotao_id,
       p.nome as pelotao_nome,
       p.numero as pelotao_numero,
-      d.data_ingresso,
       ? as pontos_distribuidos,
       COALESCE(SUM(CASE WHEN disc.id IS NOT NULL THEN COALESCE(n.nota_final, n.pontos_obtidos) ELSE 0 END), 0) as pontos_obtidos
     FROM discentes d
     JOIN pelotoes p ON p.id = d.pelotao_id
     LEFT JOIN notas n ON n.discente_id = d.id
-    LEFT JOIN disciplinas disc ON disc.id = n.disciplina_id AND disc.participa_ranking = 1 AND disc.participa_media = 1
+    LEFT JOIN disciplinas disc ON disc.id = n.disciplina_id AND disc.participa_ranking = 1
   `;
 
   const params: (string | number)[] = [totalDistribuidos];
@@ -66,7 +64,7 @@ function sortRanking(stats: DiscenteStats[]): DiscenteStats[] {
     if (b.media_ordenacao !== a.media_ordenacao) return b.media_ordenacao - a.media_ordenacao;
     if (b.pontos_obtidos !== a.pontos_obtidos) return b.pontos_obtidos - a.pontos_obtidos;
     if (b.pontos_distribuidos !== a.pontos_distribuidos) return b.pontos_distribuidos - a.pontos_distribuidos;
-    return new Date(a.data_ingresso).getTime() - new Date(b.data_ingresso).getTime();
+    return a.nome.localeCompare(b.nome, 'pt-BR');
   });
 }
 
@@ -85,7 +83,6 @@ export function calculateRanking(pelotaoIds?: string[]): RankingEntry[] {
     pontos_obtidos: s.pontos_obtidos,
     percentual: s.media,
     media: s.media,
-    data_ingresso: s.data_ingresso,
   }));
 }
 
@@ -103,32 +100,6 @@ export function getPelotaoRankingStats(pelotaoId: string) {
       ? truncarMedia(ranking.reduce((sum, r) => sum + r.media, 0) / ranking.length)
       : 0,
   };
-}
-
-export function getPelotaoComparison(pelotaoIds: string[]) {
-  const db = getDb();
-  const results = pelotaoIds.map((pid) => {
-    const pelotao = db.prepare('SELECT * FROM pelotoes WHERE id = ?').get(pid) as { id: string; nome: string; numero: number };
-    const ranking = calculateRanking([pid]);
-    const totalPontosDistribuidos = ranking.reduce((s, r) => s + r.pontos_distribuidos, 0);
-    const totalPontosObtidos = ranking.reduce((s, r) => s + r.pontos_obtidos, 0);
-    const mediaPercentual = ranking.length > 0
-      ? truncarMedia(ranking.reduce((s, r) => s + r.media, 0) / ranking.length)
-      : 0;
-
-    return {
-      pelotao_id: pid,
-      pelotao_nome: pelotao?.nome ?? '',
-      pelotao_numero: pelotao?.numero ?? 0,
-      total_discentes: ranking.length,
-      total_pontos_distribuidos: totalPontosDistribuidos,
-      total_pontos_obtidos: totalPontosObtidos,
-      media_percentual: mediaPercentual,
-      top3: ranking.slice(0, 3),
-    };
-  });
-
-  return results.sort((a, b) => b.media_percentual - a.media_percentual);
 }
 
 export function getDivergencias() {

@@ -119,8 +119,8 @@ export async function POST(request: NextRequest) {
         );
       }
       for (const discente of data.discentes || []) {
-        db.prepare('INSERT INTO discentes (id, nome, matricula, pelotao_id, data_ingresso, user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(
-          discente.id, discente.nome, discente.matricula, discente.pelotao_id, discente.data_ingresso, discente.user_id, discente.created_at, discente.updated_at
+        db.prepare('INSERT INTO discentes (id, nome, matricula, pelotao_id, user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
+          discente.id, discente.nome, discente.matricula, discente.pelotao_id, discente.user_id, discente.created_at, discente.updated_at
         );
       }
       for (const nota of data.notas || []) {

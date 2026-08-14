@@ -7,6 +7,7 @@ import type { Disciplina } from '@/lib/types';
 
 export default function DisciplinasPage() {
   const [disciplinas, setDisciplinas] = useState<Disciplina[]>([]);
+  const [savingId, setSavingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/disciplinas').then((r) => r.json()).then(setDisciplinas);
@@ -32,6 +33,30 @@ export default function DisciplinasPage() {
     return parts.join(' + ');
   };
 
+  const toggleRanking = async (disciplina: Disciplina) => {
+    const participaRanking = disciplina.participa_ranking ? 0 : 1;
+    setSavingId(disciplina.id);
+    try {
+      const response = await fetch(`/api/disciplinas/${disciplina.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ participa_ranking: participaRanking }),
+      });
+      if (!response.ok) {
+        const data = await response.json();
+        alert(data.error || 'Não foi possível atualizar a participação no ranking.');
+        return;
+      }
+      setDisciplinas((items) => items.map((item) =>
+        item.id === disciplina.id ? { ...item, participa_ranking: participaRanking } : item
+      ));
+    } catch {
+      alert('Falha de conexão. Tente novamente.');
+    } finally {
+      setSavingId(null);
+    }
+  };
+
   return (
     <AppLayout title="Disciplinas — CFS 2026">
       <div className="space-y-4">
@@ -55,7 +80,18 @@ export default function DisciplinasPage() {
             { key: 'pontos_distribuidos', label: 'Total Pts' },
             {
               key: 'ranking', label: 'Ranking', sortable: false,
-              render: (d) => d.participa_ranking ? <span className="badge-green">Sim</span> : <span className="badge-red">Não</span>,
+              render: (d) => (
+                <button
+                  type="button"
+                  onClick={() => toggleRanking(d)}
+                  disabled={savingId === d.id}
+                  aria-pressed={Boolean(d.participa_ranking)}
+                  className={d.participa_ranking ? 'badge-green hover:opacity-80 disabled:opacity-50' : 'badge-red hover:opacity-80 disabled:opacity-50'}
+                  title={d.participa_ranking ? 'Clique para remover do ranking' : 'Clique para incluir no ranking'}
+                >
+                  {savingId === d.id ? 'Salvando...' : d.participa_ranking ? 'Sim' : 'Não'}
+                </button>
+              ),
             },
           ]}
         />

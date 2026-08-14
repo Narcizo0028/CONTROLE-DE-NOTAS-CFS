@@ -9,8 +9,7 @@ import Link from 'next/link';
 import { useAuth } from '@/components/AuthProvider';
 
 interface Discente {
-  id: string; nome: string; matricula: string; pelotao_nome: string;
-  user_login: string | null;
+  id: string; nome: string; matricula: string; posto_graduacao: string; pelotao_nome: string;
 }
 
 export default function DiscentesPage() {
@@ -111,7 +110,11 @@ export default function DiscentesPage() {
               <Upload size={16} /> Importar JSON
             </Link>
           )}
-          {selectedIds.length > 0 && <button onClick={handleBulkDelete} className="btn-secondary text-red-600"><Trash2 size={16} /> Excluir selecionados ({selectedIds.length})</button>}
+          {user?.role === 'CONTROLADOR_GERAL' && selectedIds.length > 0 && (
+            <button onClick={handleBulkDelete} className="btn-secondary text-red-600">
+              <Trash2 size={16} /> Excluir selecionados ({selectedIds.length})
+            </button>
+          )}
           <button onClick={openCreate} className="btn-primary"><Plus size={16} /> Novo Discente</button>
         </div>
 
@@ -121,8 +124,8 @@ export default function DiscentesPage() {
           columns={[
             { key: 'matricula', label: 'Matrícula' },
             { key: 'nome', label: 'Nome' },
+            { key: 'posto_graduacao', label: 'Posto/Graduação' },
             { key: 'pelotao_nome', label: 'Pelotão' },
-            { key: 'user_login', label: 'Login' },
             {
               key: 'actions', label: 'Ações', sortable: false,
               render: (d) => (
@@ -133,9 +136,9 @@ export default function DiscentesPage() {
               ),
             },
           ]}
-          selectedIds={selectedIds}
-          onSelectionChange={setSelectedIds}
-          getRowId={(d) => d.id}
+          selectedIds={user?.role === 'CONTROLADOR_GERAL' ? selectedIds : undefined}
+          onSelectionChange={user?.role === 'CONTROLADOR_GERAL' ? setSelectedIds : undefined}
+          getRowId={user?.role === 'CONTROLADOR_GERAL' ? (d) => d.id : undefined}
         />
       </div>
 

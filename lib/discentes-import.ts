@@ -7,16 +7,15 @@ export interface DiscenteImportItem {
   pelotao_nome?: string;
   pelotao_numero?: number | string;
   pelotao_id?: string;
-  criar_login?: boolean;
-  login?: string;
+  posto_graduacao?: string;
   senha?: string;
 }
 
 export interface DiscenteImportPreviewItem {
   matricula: string;
   nome: string;
+  posto_graduacao: string;
   pelotao_nome: string;
-  login: string | null;
   acao: 'INCLUIR' | 'ATUALIZAR' | 'REJEITAR';
   motivo?: string;
 }
@@ -27,10 +26,7 @@ export interface DiscenteImportProcessItem {
   nome: string;
   matricula: string;
   pelotao_id: string;
-  /** Campo interno: a importação não recebe nem exibe esta informação. */
-  data_ingresso: string;
-  criar_login: boolean;
-  login: string;
+  posto_graduacao: string;
   senha: string;
 }
 
@@ -46,8 +42,7 @@ function normalizeItem(raw: Record<string, unknown>): DiscenteImportItem {
     pelotao_nome: raw.pelotao_nome != null ? String(raw.pelotao_nome).trim() : undefined,
     pelotao_numero: raw.pelotao_numero as number | string | undefined,
     pelotao_id: raw.pelotao_id != null ? String(raw.pelotao_id).trim() : undefined,
-    criar_login: raw.criar_login === undefined ? true : Boolean(raw.criar_login),
-    login: raw.login != null ? String(raw.login).trim() : undefined,
+    posto_graduacao: raw.posto_graduacao != null ? stripHtml(String(raw.posto_graduacao)) : undefined,
     senha: raw.senha != null ? String(raw.senha) : undefined,
   };
 }
@@ -101,10 +96,6 @@ function resolvePelotao(
   return null;
 }
 
-function defaultDataIngresso(): string {
-  return '2026-01-01';
-}
-
 export function buildDiscentesImportPreview(
   db: DatabaseSync,
   items: DiscenteImportItem[]
@@ -121,7 +112,7 @@ export function buildDiscentesImportPreview(
         matricula,
         nome: '?',
         pelotao_nome: '?',
-        login: null,
+        posto_graduacao: '?',
         acao: 'REJEITAR',
         motivo: 'Campo "nome" é obrigatório',
       });
@@ -133,7 +124,7 @@ export function buildDiscentesImportPreview(
         matricula: '?',
         nome: item.nome,
         pelotao_nome: '?',
-        login: null,
+        posto_graduacao: '?',
         acao: 'REJEITAR',
         motivo: 'Campo "matricula" é obrigatório',
       });
@@ -145,7 +136,7 @@ export function buildDiscentesImportPreview(
         matricula: item.matricula,
         nome: item.nome,
         pelotao_nome: '?',
-        login: null,
+        posto_graduacao: '?',
         acao: 'REJEITAR',
         motivo: 'Matrícula duplicada no arquivo',
       });
@@ -153,14 +144,12 @@ export function buildDiscentesImportPreview(
     }
     matriculasNoArquivo.add(item.matricula);
 
-    const dataIngresso = defaultDataIngresso();
-
     if (!item.pelotao && !item.pelotao_nome && item.pelotao_numero == null && !item.pelotao_id) {
       preview.push({
         matricula: item.matricula,
         nome: item.nome,
         pelotao_nome: '?',
-        login: null,
+        posto_graduacao: item.posto_graduacao || '?',
         acao: 'REJEITAR',
         motivo: 'Campo "pelotao" é obrigatório',
       });
@@ -173,37 +162,33 @@ export function buildDiscentesImportPreview(
         matricula: item.matricula,
         nome: item.nome,
         pelotao_nome: '?',
-        login: null,
+        posto_graduacao: item.posto_graduacao || '?',
         acao: 'REJEITAR',
         motivo: 'Pelotão não encontrado',
       });
       continue;
     }
 
-    const login = item.login || item.matricula;
-    const senha = item.senha ?? item.matricula;
-    const criarLogin = item.criar_login !== false;
-
-    if (criarLogin && login.length < 3) {
+    if (!item.posto_graduacao) {
       preview.push({
         matricula: item.matricula,
         nome: item.nome,
         pelotao_nome: pelotao.nome,
-        login,
+        posto_graduacao: '?',
         acao: 'REJEITAR',
-        motivo: 'Login inválido (mínimo 3 caracteres)',
+        motivo: 'Campo "posto_graduacao" é obrigatório',
       });
       continue;
     }
 
-    if (criarLogin && senha.length < 4) {
+    if (!item.senha || item.senha.length < 4) {
       preview.push({
         matricula: item.matricula,
         nome: item.nome,
         pelotao_nome: pelotao.nome,
-        login,
+        posto_graduacao: item.posto_graduacao,
         acao: 'REJEITAR',
-        motivo: 'Senha inválida (mínimo 4 caracteres)',
+        motivo: 'Campo "senha" é obrigatório e deve ter ao menos 4 caracteres',
       });
       continue;
     }
@@ -212,21 +197,19 @@ export function buildDiscentesImportPreview(
       | { id: string; user_id: string | null }
       | undefined;
 
-    if (criarLogin) {
-      const loginOwner = db.prepare('SELECT id, discente_id FROM users WHERE login = ?').get(login) as
-        | { id: string; discente_id: string | null }
-        | undefined;
-      if (loginOwner && loginOwner.discente_id !== existing?.id) {
-        preview.push({
-          matricula: item.matricula,
-          nome: item.nome,
-          pelotao_nome: pelotao.nome,
-          login,
-          acao: 'REJEITAR',
-          motivo: 'Login já utilizado por outro usuário',
-        });
-        continue;
-      }
+    const loginOwner = db.prepare('SELECT discente_id FROM users WHERE login = ?').get(item.matricula) as
+      | { discente_id: string | null }
+      | undefined;
+    if (loginOwner && loginOwner.discente_id !== existing?.id) {
+      preview.push({
+        matricula: item.matricula,
+        nome: item.nome,
+        pelotao_nome: pelotao.nome,
+        posto_graduacao: item.posto_graduacao,
+        acao: 'REJEITAR',
+        motivo: 'Matrícula já utilizada como login por outro usuário',
+      });
+      continue;
     }
 
     const acao = existing ? 'ATUALIZAR' : 'INCLUIR';
@@ -234,7 +217,7 @@ export function buildDiscentesImportPreview(
       matricula: item.matricula,
       nome: item.nome,
       pelotao_nome: pelotao.nome,
-      login: criarLogin ? login : null,
+      posto_graduacao: item.posto_graduacao,
       acao,
       motivo: existing ? 'Discente existente será atualizado' : undefined,
     });
@@ -245,10 +228,8 @@ export function buildDiscentesImportPreview(
       nome: item.nome,
       matricula: item.matricula,
       pelotao_id: pelotao.id,
-      data_ingresso: dataIngresso,
-      criar_login: criarLogin,
-      login,
-      senha,
+      posto_graduacao: item.posto_graduacao,
+      senha: item.senha,
     });
   }
 
