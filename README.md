@@ -222,7 +222,7 @@ Percentual = (pontos obtidos ÷ pontos distribuídos) × 100
 **Critérios de desempate:**
 1. Maior quantidade de pontos obtidos
 2. Maior quantidade de pontos distribuídos
-3. Data de ingresso na instituição (mais antigo primeiro)
+3. Nome do discente (ordem alfabética)
 
 ---
 
