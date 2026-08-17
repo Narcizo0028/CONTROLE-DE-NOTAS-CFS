@@ -1,12 +1,29 @@
 /**
  * Inicialização lazy — sempre garante usuários se banco vazio.
+ *
+ * O estado fica em globalThis porque, no `next dev`, cada rota de API é um
+ * bundle separado: variáveis de módulo NÃO são compartilhadas entre páginas.
  */
-let bootstrapped = false;
-let bootstrapping: Promise<void> | null = null;
+type RuntimeReadyState = {
+  bootstrapped: boolean;
+  bootstrapping: Promise<void> | null;
+};
+
+const runtimeState = (globalThis as typeof globalThis & {
+  __cfsRuntimeReady?: RuntimeReadyState;
+});
+
+function getRuntimeState(): RuntimeReadyState {
+  if (!runtimeState.__cfsRuntimeReady) {
+    runtimeState.__cfsRuntimeReady = { bootstrapped: false, bootstrapping: null };
+  }
+  return runtimeState.__cfsRuntimeReady;
+}
 
 export async function ensureRuntimeReady() {
-  if (bootstrapped) return;
-  if (bootstrapping) return bootstrapping;
+  const state = getRuntimeState();
+  if (state.bootstrapped) return;
+  if (state.bootstrapping) return state.bootstrapping;
 
   const run = (async () => {
     try {
@@ -17,13 +34,13 @@ export async function ensureRuntimeReady() {
       await ensureDemoAccess();
 
       // Falha ao semear não deve impedir o login de usuários já cadastrados.
-      bootstrapped = true;
+      state.bootstrapped = true;
     } finally {
       // Libera para nova tentativa caso a abertura do banco tenha falhado.
-      bootstrapping = null;
+      state.bootstrapping = null;
     }
   })();
 
-  bootstrapping = run;
+  state.bootstrapping = run;
   return run;
 }

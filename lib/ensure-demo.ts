@@ -43,12 +43,15 @@ export async function ensureDemoAccess() {
 
   if (!shouldEnsureDemoData()) return;
 
-  console.log(`[demo] Sincronizando credenciais demo (${userCount} usuários)...`);
-  await syncDemoAccounts(db);
-  clearLoginAttempts(db);
+  // Banco já tem usuários: cria apenas contas demo ausentes.
+  // Não recalcula bcrypt nem sobrescreve senhas existentes.
+  const created = await syncDemoAccounts(db);
+  if (created > 0) {
+    console.log(`[demo] Contas demo ausentes criadas: ${created}`);
+  }
 }
 
-async function syncDemoAccounts(db: ReturnType<typeof getDb>) {
+async function syncDemoAccounts(db: ReturnType<typeof getDb>): Promise<number> {
   for (let i = 1; i <= 8; i++) {
     const existing = db.prepare('SELECT id FROM pelotoes WHERE numero = ?').get(i) as { id: string } | undefined;
     if (!existing) {
@@ -56,22 +59,20 @@ async function syncDemoAccounts(db: ReturnType<typeof getDb>) {
     }
   }
 
-  for (const account of DEMO_ACCOUNTS) {
-    const hash = await bcrypt.hash(account.password, 12);
-    const existing = db.prepare('SELECT id FROM users WHERE login = ?').get(account.login) as { id: string } | undefined;
+  let created = 0;
 
-    if (existing) {
-      db.prepare(`
-        UPDATE users SET password_hash = ?, ativo = 1, updated_at = datetime('now') WHERE login = ?
-      `).run(hash, account.login);
-      continue;
-    }
+  for (const account of DEMO_ACCOUNTS) {
+    const existing = db.prepare('SELECT id FROM users WHERE login = ?').get(account.login) as { id: string } | undefined;
+    if (existing) continue;
+
+    const hash = await bcrypt.hash(account.password, 12);
 
     if (account.role === 'CONTROLADOR_GERAL') {
       db.prepare(`
         INSERT INTO users (id, login, password_hash, nome, role, ativo)
         VALUES (?, ?, ?, ?, 'CONTROLADOR_GERAL', 1)
       `).run(uuidv4(), account.login, hash, account.nome);
+      created += 1;
       continue;
     }
 
@@ -84,10 +85,11 @@ async function syncDemoAccounts(db: ReturnType<typeof getDb>) {
         VALUES (?, ?, ?, ?, 'CONTROLADOR_PELOTÃO', ?, 1)
       `).run(controladorId, account.login, hash, account.nome, pelotao.id);
       db.prepare('UPDATE pelotoes SET controlador_id = ? WHERE id = ?').run(controladorId, pelotao.id);
-      continue;
+      created += 1;
     }
-
   }
+
+  return created;
 }
 
 function clearLoginAttempts(db: ReturnType<typeof getDb>) {

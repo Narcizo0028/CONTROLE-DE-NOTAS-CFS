@@ -10,10 +10,9 @@ export function isRenderHost(): boolean {
 }
 
 /**
- * Controla apenas a RE-sincronização das senhas demo a cada inicialização.
- * A criação inicial das contas quando o banco está vazio acontece sempre, em
- * ensureDemoAccess(). Ligar isto em produção sobrescreveria, a cada reinício,
- * as senhas que os usuários tiverem alterado.
+ * Controla se contas demo AUSENTES devem ser criadas quando o banco já tem usuários.
+ * A criação inicial (banco vazio) acontece sempre, em ensureDemoAccess().
+ * Contas já existentes nunca têm a senha sobrescrita.
  */
 export function shouldEnsureDemoData(): boolean {
   if (process.env.SEED_DEMO_DATA === 'false') return false;
